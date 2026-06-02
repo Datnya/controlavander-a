@@ -32,9 +32,14 @@ window.receiptPage = {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Copiar como Imagen
           </button>
+
+          <button class="btn btn-success w-100 mt-3" style="background-color: #25D366; border-color: #25D366;" onclick="receiptPage.sendToWhatsApp()" id="btnSendWA">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Enviar por WhatsApp
+          </button>
           
           <div class="text-xs text-gray-500 mt-2 text-center">
-            Ideal para pegar en WhatsApp.
+            Pega (Ctrl+V) la imagen en el chat.
           </div>
           
           <div class="divider my-4"></div>
@@ -212,10 +217,44 @@ window.receiptPage = {
     } catch (e) {
       console.error('Error al generar imagen:', e);
       toast.error('Error', 'No se pudo generar la imagen del recibo.');
+      return false;
     } finally {
       btn.disabled = false;
       btn.innerHTML = originalText;
     }
+  },
+
+  async sendToWhatsApp() {
+    if (!this.data) return;
+    
+    let phone = this.data.order.client_phone || '';
+    phone = phone.replace(/\D/g, ''); // Remove non-numeric
+    
+    if (!phone) {
+      toast.error('Atención', 'El cliente no tiene un número de teléfono registrado.');
+      return;
+    }
+
+    const btn = document.getElementById('btnSendWA');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner spinner-sm"></div> Procesando...';
+
+    // Auto copy image first
+    await this.copyAsImage(); 
+    
+    // Open WA Web
+    const msg = encodeURIComponent(`Hola ${this.data.order.client_name}, aquí tienes el comprobante de tu pedido ${this.data.order.order_number}.`);
+    
+    // In Electron renderer without shell module, window.open works best for external links if webPreferences allows it,
+    // or we can just create an anchor and click it.
+    const waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${msg}`;
+    window.open(waUrl, '_blank');
+    
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }, 1000);
   },
 
   print() {

@@ -40,6 +40,7 @@ window.ordersPage = {
               <th>Recepción</th>
               <th>Total</th>
               <th>Estado</th>
+              <th class="text-right">Acciones</th>
             </tr>
           </thead>
           <tbody id="ordersTableBody">
@@ -139,6 +140,11 @@ window.ordersPage = {
           </td>
           <td class="font-semibold text-gray-900">${format.currency(order.final_amount)}</td>
           <td>${format.statusBadge(order.status)}</td>
+          <td class="text-right">
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); app.navigate('receipt', {id: ${order.id}})" title="Ver Comprobante">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            </button>
+          </td>
         </tr>
       `;
     });
