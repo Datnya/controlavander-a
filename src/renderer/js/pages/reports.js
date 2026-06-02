@@ -11,9 +11,19 @@ window.reportsPage = {
             <div class="tab-pill" data-period="weekly">Semanal</div>
             <div class="tab-pill active" data-period="monthly">Mensual</div>
           </div>
-          
-          <div id="reportControls" class="flex-align gap-3">
-            <!-- Los controles cambiarán según el periodo -->
+          <div class="flex-align gap-3">
+            <div id="reportControls" class="flex-align gap-3 mr-4">
+              <!-- Los controles cambiarán según el periodo -->
+            </div>
+            
+            <button class="btn btn-secondary btn-sm" onclick="reportsPage.exportCSV()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Exportar CSV
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="reportsPage.clearHistory()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              Vaciar Historial
+            </button>
           </div>
         </div>
       </div>
@@ -240,5 +250,56 @@ window.reportsPage = {
     });
 
     container.innerHTML = html;
+  },
+
+  async exportCSV() {
+    if (!this.data || !this.data.income_by_date) {
+      toast.error('Error', 'No hay datos para exportar');
+      return;
+    }
+
+    // Construir CSV string
+    let csv = 'Fecha,Total Pedidos,Ingresos\n';
+    this.data.income_by_date.forEach(item => {
+      csv += `"${item.date}","${item.total_orders}","${item.total}"\n`;
+    });
+    
+    csv += '\nServicio,Pedidos,Total Ingresos\n';
+    if (this.data.services_breakdown) {
+      this.data.services_breakdown.forEach(item => {
+        csv += `"${item.service_name}","${item.order_count}","${item.total_amount}"\n`;
+      });
+    }
+    
+    csv += `\nRESUMEN\nIngresos Totales,"${this.data.total_income}"\n`;
+    csv += `Total Pedidos,"${this.data.total_orders}"\n`;
+
+    const res = await window.api.reports.exportCSV(csv, `Reporte_${this.currentPeriod}.csv`);
+    if (res.success) {
+      if (!res.canceled) toast.success('Exportado', 'El reporte fue guardado correctamente');
+    } else {
+      toast.error('Error', 'No se pudo exportar el archivo');
+    }
+  },
+
+  async clearHistory() {
+    modal.confirm(
+      'Vaciar Historial',
+      '¿Está seguro de eliminar permanentemente todos los pedidos que ya fueron entregados? Esta acción NO se puede deshacer y los datos eliminados no aparecerán en futuros reportes.',
+      async () => {
+        try {
+          const res = await window.api.reports.clearOld();
+          if (res.success) {
+            toast.success('Limpieza Completa', `Se eliminaron ${res.count} pedidos entregados.`);
+            this.loadData();
+          } else {
+            throw new Error(res.error);
+          }
+        } catch (e) {
+          toast.error('Error', 'No se pudo vaciar el historial');
+        }
+      },
+      'warning'
+    );
   }
 };

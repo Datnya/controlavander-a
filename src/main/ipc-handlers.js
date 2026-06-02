@@ -1,4 +1,5 @@
-const { ipcMain, clipboard, nativeImage, BrowserWindow, app } = require('electron');
+const { ipcMain, clipboard, nativeImage, BrowserWindow, app, dialog } = require('electron');
+const fs = require('fs');
 const db = require('./database');
 const license = require('./license');
 
@@ -159,6 +160,35 @@ function registerIpcHandlers() {
   ipcMain.handle('reports:getIncomeByDateRange', async (_, startDate, endDate) => {
     try { return { success: true, data: db.getIncomeByDateRange(startDate, endDate) }; }
     catch (e) { return { success: false, error: e.message }; }
+  });
+
+  ipcMain.handle('reports:exportCSV', async (_, data, filename) => {
+    try {
+      const win = BrowserWindow.getFocusedWindow();
+      const { canceled, filePath } = await dialog.showSaveDialog(win, {
+        title: 'Guardar Reporte',
+        defaultPath: filename || 'reporte.csv',
+        filters: [{ name: 'Archivos CSV', extensions: ['csv'] }]
+      });
+      
+      if (canceled || !filePath) return { success: true, canceled: true };
+      
+      // Agregar BOM para que Excel detecte correctamente UTF-8
+      const bom = '\uFEFF';
+      fs.writeFileSync(filePath, bom + data, 'utf8');
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle('reports:clearOld', async () => {
+    try {
+      const count = db.clearOldOrders();
+      return { success: true, count };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
   });
 
   // ==================== LICENCIA ====================

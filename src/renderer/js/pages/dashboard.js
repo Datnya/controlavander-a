@@ -123,7 +123,8 @@ window.dashboardPage = {
 
     } catch (e) {
       console.error('Error cargando dashboard', e);
-      toast.error('Error', 'No se pudieron cargar los datos del dashboard');
+      // Silenciar toast recurrente
+      // toast.error('Error', 'No se pudieron cargar los datos del dashboard');
     }
   },
 

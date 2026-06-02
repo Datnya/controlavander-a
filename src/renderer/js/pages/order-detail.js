@@ -92,6 +92,35 @@ window.orderDetailPage = {
             </div>
           </div>
 
+          <div class="card">
+            <h3 class="font-semibold text-md mb-4 border-bottom pb-3 flex-between align-center">
+              <span>Estado de Pago</span>
+              <span id="detailPaymentBadge"></span>
+            </h3>
+            
+            <div class="flex-between align-center mb-3">
+              <span class="text-gray-600">Total del Servicio:</span>
+              <span class="font-bold text-lg" id="detailPaymentTotal">-</span>
+            </div>
+            
+            <div class="flex-between align-center mb-3 text-success" id="detailPaymentAdvanceRow" style="display: none;">
+              <span>Adelanto Pagado:</span>
+              <span class="font-bold" id="detailPaymentAdvance">-</span>
+            </div>
+            
+            <div class="flex-between align-center border-top pt-3 mt-3">
+              <span class="text-gray-800 font-medium">Saldo Pendiente:</span>
+              <span class="font-bold text-xl text-danger" id="detailPaymentBalance">-</span>
+            </div>
+
+            <div id="paymentActionContainer" class="mt-4 pt-4 border-top" style="display: none;">
+              <button class="btn btn-success w-100" style="justify-content: center;" onclick="orderDetailPage.markAsPaid()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Cobrar Saldo y Marcar Pagado
+              </button>
+            </div>
+          </div>
+
         </div>
 
         <!-- Columna Derecha: Acciones y Estado -->
@@ -178,6 +207,43 @@ window.orderDetailPage = {
     }
     document.getElementById('detailNotes').innerHTML = notesText || '-';
 
+    // Update Payment
+    const paymentBadges = {
+      pending: '<span class="badge" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a;">Pendiente</span>',
+      partial: '<span class="badge" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd;">Adelanto</span>',
+      paid: '<span class="badge" style="background: #d1fae5; color: #059669; border: 1px solid #a7f3d0;">Pagado</span>'
+    };
+    document.getElementById('detailPaymentBadge').innerHTML = paymentBadges[d.payment_status] || paymentBadges.pending;
+    
+    document.getElementById('detailPaymentTotal').textContent = format.currency(d.final_amount);
+    
+    const advance = d.payment_status === 'partial' ? d.advance_payment : (d.payment_status === 'paid' ? d.final_amount : 0);
+    const balance = Math.max(0, d.final_amount - advance);
+    
+    if (d.payment_status === 'partial') {
+      document.getElementById('detailPaymentAdvanceRow').style.display = 'flex';
+      document.getElementById('detailPaymentAdvance').textContent = format.currency(advance);
+    } else {
+      document.getElementById('detailPaymentAdvanceRow').style.display = 'none';
+    }
+    
+    const balanceEl = document.getElementById('detailPaymentBalance');
+    balanceEl.textContent = format.currency(balance);
+    if (balance === 0) {
+      balanceEl.classList.remove('text-danger');
+      balanceEl.classList.add('text-success');
+    } else {
+      balanceEl.classList.add('text-danger');
+      balanceEl.classList.remove('text-success');
+    }
+
+    const actionContainer = document.getElementById('paymentActionContainer');
+    if (d.payment_status !== 'paid') {
+      actionContainer.style.display = 'block';
+    } else {
+      actionContainer.style.display = 'none';
+    }
+
     // Update status buttons
     const buttons = document.querySelectorAll('.status-btn');
     buttons.forEach(btn => {
@@ -186,6 +252,30 @@ window.orderDetailPage = {
         btn.classList.add('active-status');
       }
     });
+  },
+
+  async markAsPaid() {
+    if (!this.data) return;
+    
+    modal.confirm(
+      'Cobrar Saldo',
+      '¿Confirmas que el cliente ha pagado el saldo restante?',
+      async () => {
+        try {
+          const updatedData = { ...this.data, payment_status: 'paid', advance_payment: 0 };
+          const res = await window.api.orders.update(this.orderId, updatedData);
+          if (res.success) {
+            toast.success('Pago Registrado', 'El pedido ha sido marcado como pagado.');
+            this.loadData();
+          } else {
+            throw new Error(res.error);
+          }
+        } catch(e) {
+          toast.error('Error', 'No se pudo registrar el pago');
+        }
+      },
+      'info'
+    );
   },
 
   async updateStatus(newStatus) {

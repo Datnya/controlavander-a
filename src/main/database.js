@@ -95,6 +95,14 @@ function createTables() {
     CREATE INDEX IF NOT EXISTS idx_clients_name ON clients(full_name);
     CREATE INDEX IF NOT EXISTS idx_clients_phone ON clients(phone);
   `);
+
+  // Migración para añadir columnas de pago si no existen
+  try {
+    db.exec("ALTER TABLE orders ADD COLUMN payment_status TEXT DEFAULT 'pending'");
+    db.exec("ALTER TABLE orders ADD COLUMN advance_payment REAL DEFAULT 0");
+  } catch (e) {
+    // Si la columna ya existe, SQLite lanzará un error que podemos ignorar
+  }
 }
 
 /**
@@ -287,15 +295,16 @@ function createOrder(data) {
   const result = db.prepare(`
     INSERT INTO orders (order_number, client_id, service_id, weight_kg, garment_count,
       garment_detail, garment_observations, special_services, status, base_amount,
-      discount, final_amount, estimated_delivery, notes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'received', ?, ?, ?, ?, ?)
+      discount, final_amount, estimated_delivery, notes, payment_status, advance_payment)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'received', ?, ?, ?, ?, ?, ?, ?)
   `).run(
     orderNumber, data.client_id, data.service_id,
     data.weight_kg || 0, data.garment_count || 0,
     data.garment_detail || '', data.garment_observations || '',
     data.special_services || '', data.base_amount,
     data.discount || 0, data.final_amount,
-    data.estimated_delivery || null, data.notes || ''
+    data.estimated_delivery || null, data.notes || '',
+    data.payment_status || 'pending', data.advance_payment || 0
   );
   return getOrderById(result.lastInsertRowid);
 }
@@ -305,13 +314,15 @@ function updateOrder(id, data) {
     UPDATE orders SET client_id = ?, service_id = ?, weight_kg = ?, garment_count = ?,
       garment_detail = ?, garment_observations = ?, special_services = ?,
       base_amount = ?, discount = ?, final_amount = ?, estimated_delivery = ?, notes = ?,
+      payment_status = ?, advance_payment = ?,
       updated_at = datetime('now','localtime')
     WHERE id = ?
   `).run(
     data.client_id, data.service_id, data.weight_kg || 0, data.garment_count || 0,
     data.garment_detail || '', data.garment_observations || '',
     data.special_services || '', data.base_amount, data.discount || 0,
-    data.final_amount, data.estimated_delivery || null, data.notes || '', id
+    data.final_amount, data.estimated_delivery || null, data.notes || '', 
+    data.payment_status || 'pending', data.advance_payment || 0, id
   );
   return getOrderById(id);
 }
@@ -419,7 +430,13 @@ function getDashboardStats() {
   `).get(today);
 
   const todayIncome = db.prepare(`
-    SELECT COALESCE(SUM(final_amount), 0) as total FROM orders 
+    SELECT COALESCE(SUM(
+      CASE 
+        WHEN payment_status = 'paid' THEN final_amount
+        WHEN payment_status = 'partial' THEN advance_payment
+        ELSE 0
+      END
+    ), 0) as total FROM orders 
     WHERE DATE(received_date) = ?
   `).get(today);
 
@@ -450,7 +467,13 @@ function getDailySummary(date) {
   const summary = db.prepare(`
     SELECT 
       COUNT(*) as total_orders,
-      COALESCE(SUM(final_amount), 0) as total_income,
+      COALESCE(SUM(
+        CASE 
+          WHEN payment_status = 'paid' THEN final_amount
+          WHEN payment_status = 'partial' THEN advance_payment
+          ELSE 0
+        END
+      ), 0) as total_income,
       COALESCE(SUM(discount), 0) as total_discounts,
       COALESCE(AVG(final_amount), 0) as avg_per_order
     FROM orders WHERE DATE(received_date) = ?
@@ -464,7 +487,13 @@ function getWeeklySummary(startDate, endDate) {
     SELECT 
       DATE(received_date) as date,
       COUNT(*) as total_orders,
-      COALESCE(SUM(final_amount), 0) as total_income
+      COALESCE(SUM(
+        CASE 
+          WHEN payment_status = 'paid' THEN final_amount
+          WHEN payment_status = 'partial' THEN advance_payment
+          ELSE 0
+        END
+      ), 0) as total_income
     FROM orders 
     WHERE DATE(received_date) BETWEEN ? AND ?
     GROUP BY DATE(received_date)
@@ -474,7 +503,13 @@ function getWeeklySummary(startDate, endDate) {
   const summary = db.prepare(`
     SELECT 
       COUNT(*) as total_orders,
-      COALESCE(SUM(final_amount), 0) as total_income,
+      COALESCE(SUM(
+        CASE 
+          WHEN payment_status = 'paid' THEN final_amount
+          WHEN payment_status = 'partial' THEN advance_payment
+          ELSE 0
+        END
+      ), 0) as total_income,
       COALESCE(SUM(discount), 0) as total_discounts,
       COALESCE(AVG(final_amount), 0) as avg_per_order
     FROM orders WHERE DATE(received_date) BETWEEN ? AND ?
@@ -491,7 +526,13 @@ function getMonthlySummary(year, month) {
     SELECT 
       DATE(received_date) as date,
       COUNT(*) as total_orders,
-      COALESCE(SUM(final_amount), 0) as total_income
+      COALESCE(SUM(
+        CASE 
+          WHEN payment_status = 'paid' THEN final_amount
+          WHEN payment_status = 'partial' THEN advance_payment
+          ELSE 0
+        END
+      ), 0) as total_income
     FROM orders 
     WHERE DATE(received_date) BETWEEN ? AND ?
     GROUP BY DATE(received_date)
@@ -501,7 +542,13 @@ function getMonthlySummary(year, month) {
   const summary = db.prepare(`
     SELECT 
       COUNT(*) as total_orders,
-      COALESCE(SUM(final_amount), 0) as total_income,
+      COALESCE(SUM(
+        CASE 
+          WHEN payment_status = 'paid' THEN final_amount
+          WHEN payment_status = 'partial' THEN advance_payment
+          ELSE 0
+        END
+      ), 0) as total_income,
       COALESCE(SUM(discount), 0) as total_discounts,
       COALESCE(AVG(final_amount), 0) as avg_per_order
     FROM orders WHERE DATE(received_date) BETWEEN ? AND ?
@@ -515,7 +562,13 @@ function getIncomeByDateRange(startDate, endDate) {
     SELECT 
       DATE(received_date) as date,
       COUNT(*) as total_orders,
-      COALESCE(SUM(final_amount), 0) as total_income,
+      COALESCE(SUM(
+        CASE 
+          WHEN payment_status = 'paid' THEN final_amount
+          WHEN payment_status = 'partial' THEN advance_payment
+          ELSE 0
+        END
+      ), 0) as total_income,
       COALESCE(SUM(discount), 0) as total_discounts
     FROM orders 
     WHERE DATE(received_date) BETWEEN ? AND ?
@@ -550,6 +603,11 @@ function getDatabase() {
   return db;
 }
 
+function clearOldOrders() {
+  const result = db.prepare("DELETE FROM orders WHERE status = 'delivered'").run();
+  return result.changes;
+}
+
 module.exports = {
   initDatabase, getDatabase,
   // Clientes
@@ -558,7 +616,7 @@ module.exports = {
   getAllServices, getActiveServices, createService, updateService, toggleServiceActive,
   // Pedidos
   getNextOrderNumber, getAllOrders, getOrderById, createOrder, updateOrder, updateOrderStatus,
-  getOrdersByClient, getActiveOrders, getTodayOrders,
+  getOrdersByClient, getActiveOrders, getTodayOrders, clearOldOrders,
   // Configuración
   getSetting, getAllSettings, setSetting, getBulkSettings,
   // Reportes

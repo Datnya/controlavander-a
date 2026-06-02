@@ -108,6 +108,23 @@ window.newOrderPage = {
           </div>
 
           <div class="form-group mt-6">
+            <label class="form-label text-xs">ESTADO DE PAGO</label>
+            <select id="orderPaymentStatus" class="form-select mb-2">
+              <option value="pending" selected>Pendiente de Pago</option>
+              <option value="partial">Adelanto / Pago Parcial</option>
+              <option value="paid">Pagado Completo</option>
+            </select>
+            
+            <div id="advancePaymentGroup" style="display: none; align-items: center; gap: 8px;" class="mt-2">
+              <span class="text-sm font-medium text-gray-600">Adelanto:</span>
+              <div class="flex-align" style="gap: 4px; flex: 1;">
+                <span class="text-gray-400">S/</span>
+                <input type="text" id="orderAdvancePayment" class="form-input form-input-sm text-right" style="padding: 4px 8px; flex: 1;" value="0.00">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group mt-6">
             <label class="form-label text-xs">FECHA ESTIMADA DE ENTREGA</label>
             <input type="date" id="orderDeliveryDate" class="form-input">
           </div>
@@ -254,6 +271,21 @@ window.newOrderPage = {
       });
     });
 
+    // Estado de pago
+    document.getElementById('orderPaymentStatus').addEventListener('change', (e) => {
+      const advanceGroup = document.getElementById('advancePaymentGroup');
+      if (e.target.value === 'partial') {
+        advanceGroup.style.display = 'flex';
+      } else {
+        advanceGroup.style.display = 'none';
+        document.getElementById('orderAdvancePayment').value = '0.00';
+      }
+    });
+
+    document.getElementById('orderAdvancePayment').addEventListener('input', (e) => {
+      e.target.value = format.numericInput(e.target.value);
+    });
+
     // Submit form
     document.getElementById('saveOrderBtn').addEventListener('click', () => this.saveOrder());
   },
@@ -343,6 +375,8 @@ window.newOrderPage = {
       const discount = parseFloat(document.getElementById('orderDiscount').value) || 0;
       const notes = document.getElementById('orderNotes').value.trim();
       const deliveryDate = document.getElementById('orderDeliveryDate').value;
+      const paymentStatus = document.getElementById('orderPaymentStatus').value;
+      const advancePayment = parseFloat(document.getElementById('orderAdvancePayment').value) || 0;
       
       let subtotal = 0;
       if (this.selectedService.is_per_kg === 1) {
@@ -360,7 +394,9 @@ window.newOrderPage = {
         base_amount: subtotal,
         discount: discount,
         final_amount: subtotal - discount,
-        estimated_delivery: deliveryDate
+        estimated_delivery: deliveryDate,
+        payment_status: paymentStatus,
+        advance_payment: paymentStatus === 'partial' ? advancePayment : 0
       };
 
       const res = await window.api.orders.create(orderData);

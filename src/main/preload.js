@@ -50,6 +50,8 @@ contextBridge.exposeInMainWorld('api', {
     getWeeklySummary: (startDate, endDate) => ipcRenderer.invoke('reports:getWeeklySummary', startDate, endDate),
     getMonthlySummary: (year, month) => ipcRenderer.invoke('reports:getMonthlySummary', year, month),
     getIncomeByDateRange: (startDate, endDate) => ipcRenderer.invoke('reports:getIncomeByDateRange', startDate, endDate),
+    exportCSV: (data, filename) => ipcRenderer.invoke('reports:exportCSV', data, filename),
+    clearOld: () => ipcRenderer.invoke('reports:clearOld'),
   },
 
   // ==================== LICENCIA ====================
