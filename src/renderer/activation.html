@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Activar Licencia — Control de Lavandería</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <div class="titlebar">
+    <span class="titlebar-title">Control de Lavandería</span>
+    <div class="titlebar-controls">
+      <button class="titlebar-btn" onclick="window.api.app.minimize()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+      </button>
+      <button class="titlebar-btn close" onclick="window.api.app.close()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="activation-page">
+    <div class="activation-card">
+      <img src="../../assets/logo.png" alt="Logo" class="activation-logo">
+      <h1 class="activation-title">Bienvenido</h1>
+      <p class="activation-subtitle">Ingrese su código de licencia para activar la aplicación</p>
+      
+      <input type="text" id="licenseCode" class="activation-input" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19" autocomplete="off" autofocus>
+      
+      <button id="activateBtn" class="btn btn-primary activation-btn" onclick="activateLicense()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+        Activar Licencia
+      </button>
+
+      <div id="loadingIndicator" class="activation-loading">
+        <div class="spinner spinner-sm"></div>
+        <span>Verificando licencia...</span>
+      </div>
+
+      <div id="errorMessage" class="activation-error"></div>
+    </div>
+  </div>
+
+  <script>
+    const codeInput = document.getElementById('licenseCode');
+    const activateBtn = document.getElementById('activateBtn');
+    const loadingEl = document.getElementById('loadingIndicator');
+    const errorEl = document.getElementById('errorMessage');
+
+    // Formatear input mientras escribe
+    codeInput.addEventListener('input', (e) => {
+      let value = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+      let formatted = '';
+      for (let i = 0; i < value.length && i < 16; i++) {
+        if (i > 0 && i % 4 === 0) formatted += '-';
+        formatted += value[i];
+      }
+      e.target.value = formatted;
+    });
+
+    codeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') activateLicense();
+    });
+
+    async function activateLicense() {
+      const code = codeInput.value.trim();
+      if (!code) {
+        showError('Por favor, ingrese un código de licencia');
+        return;
+      }
+
+      activateBtn.disabled = true;
+      loadingEl.classList.add('show');
+      errorEl.classList.remove('show');
+
+      try {
+        const result = await window.api.license.activate(code);
+        if (result.success) {
+          // Licencia activada — recargar la app
+          await window.api.app.loadPage('index.html');
+        } else {
+          showError(result.error || 'No se pudo activar la licencia');
+        }
+      } catch (err) {
+        showError('Error de conexión. Verifique su internet e intente nuevamente.');
+      } finally {
+        activateBtn.disabled = false;
+        loadingEl.classList.remove('show');
+      }
+    }
+
+    function showError(message) {
+      errorEl.textContent = message;
+      errorEl.classList.add('show');
+    }
+  </script>
+</body>
+</html>

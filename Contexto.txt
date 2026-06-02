@@ -1,0 +1,493 @@
+# Especificación técnica y funcional
+
+## Aplicación de gestión para lavanderías — Foxy Studio
+
+---
+
+# 1. Propósito del documento
+
+Este documento describe de forma técnica y funcional la aplicación que se desarrollará para lavanderías. El objetivo es que Antigravity pueda comprender con claridad qué debe construir, cómo debe funcionar el sistema, qué módulos incluye, cómo se controla la licencia, cómo funciona el cobro y cuáles son las reglas de negocio principales.
+
+La aplicación debe ayudar a lavanderías a reemplazar procesos manuales por un sistema digital simple, rápido y ordenado para registrar clientes, controlar prendas, calcular cobros, gestionar pedidos y emitir comprobantes digitales.
+
+---
+
+# 2. Alcance general del producto
+
+La solución será una sola aplicación con compatibilidad para:
+
+* **PC**
+* **Celular**
+* **Tablet**
+
+Debe funcionar en ambos tipos de formato, manteniendo la misma lógica operativa y adaptando la interfaz al dispositivo.
+
+La aplicación está pensada **exclusivamente para lavanderías** en esta fase inicial.
+
+---
+
+# 3. Objetivo del software
+
+El software debe permitir a una lavandería:
+
+* Registrar clientes nuevos y frecuentes.
+* Registrar pedidos o servicios de lavado.
+* Controlar la ropa ingresada.
+* Capturar kilos, tipo de servicio y monto total.
+* Aplicar descuentos cuando corresponda.
+* Generar comprobantes digitales.
+* Consultar pedidos por búsqueda rápida.
+* Llevar historial de atención.
+* Controlar pagos y estados de pedidos.
+* Validar licencias por dispositivo.
+
+La finalidad del sistema es reducir trabajo manual, evitar errores operativos y mejorar la velocidad de atención.
+
+---
+
+# 4. Modelo comercial de la aplicación
+
+## 4.1 Pago por uso de la aplicación
+
+La aplicación se comercializará bajo un esquema de **pago único por licencia**.
+
+### Precio propuesto
+
+* **S/ 200 por licencia**
+
+### Formas de pago
+
+1. **Pago completo de una sola vez**.
+2. **Pago dividido en 2 cuotas**:
+
+   * S/ 100 al inicio.
+   * S/ 100 al mes siguiente.
+
+El pago en cuotas es opcional. Si el cliente desea cancelar todo de una vez, puede hacerlo.
+
+---
+
+## 4.2 Mantenimiento obligatorio
+
+Además del pago único, la aplicación tendrá un **mantenimiento anual obligatorio**.
+
+### Precio del mantenimiento
+
+* **S/ 60 al año**
+
+### El mantenimiento incluye
+
+* Soporte técnico.
+* Corrección de errores o fallas de la aplicación.
+* Actualizaciones automáticas.
+* Asistencia remota ante incidencias.
+* Revisión general de funcionamiento.
+
+### Condición de uso
+
+Si el mantenimiento no se cancela en la fecha correspondiente, la licencia debe ser suspendida y la aplicación debe bloquearse completamente hasta que el cliente regularice su situación con el proveedor.
+
+---
+
+# 5. Sistema de licencias
+
+## 5.1 Principio general
+
+Cada instalación de la aplicación debe activarse mediante una **licencia única de un solo uso**.
+
+## 5.2 Reglas de la licencia
+
+* La licencia se asigna a **un solo dispositivo**.
+* La licencia debe quedar vinculada al equipo donde fue activada.
+* Si el cliente desea cambiar de dispositivo, debe comunicarse con el proveedor para solicitar una nueva activación.
+* El proveedor debe poder **activar, desactivar o suspender licencias** cuando lo necesite.
+* Si el cliente incumple pagos, la app debe quedar bloqueada.
+
+## 5.3 Validación de la licencia
+
+La aplicación debe validar el estado de la licencia a través de internet o datos móviles del dispositivo.
+
+### Recomendación técnica
+
+La app debe funcionar normalmente aunque el negocio esté en operación sin internet constante, pero debe validar su estado de licencia en línea bajo la lógica definida por el sistema.
+
+### Objetivo de esta validación
+
+Permitir al proveedor:
+
+* Suspender licencias impagas.
+* Reactivar licencias cuando el cliente se ponga al día.
+* Controlar el uso del software por dispositivo.
+
+## 5.4 Estados de la licencia
+
+La licencia puede tener los siguientes estados:
+
+* **Activa**
+* **Suspendida**
+* **Vencida**
+* **Pendiente de verificación**
+
+## 5.5 Comportamiento cuando la licencia se suspende
+
+Si la licencia está suspendida, la aplicación debe mostrar una pantalla bloqueada con un mensaje claro similar a:
+
+> Su licencia ha sido suspendida por falta de pago. Comuníquese con su proveedor para reactivar el servicio.
+
+La aplicación no debe permitir continuar con el uso normal hasta que la licencia vuelva a estar activa.
+
+---
+
+# 6. Funcionalidades principales del sistema
+
+## 6.1 Registro de clientes
+
+La aplicación debe permitir registrar clientes de lavandería de forma rápida y ordenada.
+
+### Campos mínimos del registro
+
+* Nombre completo
+* Número de celular / WhatsApp
+* Documento de identidad, si se desea incluirlo
+* Fecha y hora de ingreso del pedido
+* Observaciones generales
+
+### Requisitos del registro
+
+* Debe ser simple de completar.
+* Debe permitir guardar clientes frecuentes.
+* Debe permitir búsquedas rápidas por nombre o celular.
+
+---
+
+## 6.2 Registro de pedidos o servicios
+
+Cada vez que un cliente deja prendas, la app debe permitir registrar el pedido.
+
+### Datos sugeridos del pedido
+
+* Cliente
+* Fecha de ingreso
+* Tipo de servicio
+* Detalle de prendas o descripción
+* Cantidad de kilos, si aplica
+* Estado del pedido
+* Fecha estimada de entrega
+* Monto base
+* Descuento opcional
+* Monto final
+
+---
+
+## 6.3 Control de prendas y peso
+
+La aplicación debe permitir registrar información útil para lavandería, como:
+
+* Tipo de prendas
+* Número de prendas
+* Peso en kilos
+* Observaciones sobre el estado de las prendas
+* Servicios especiales, si los hubiera
+
+Este módulo debe adaptarse al tipo de operación real de la lavandería.
+
+---
+
+## 6.4 Cálculo automático del monto
+
+El sistema debe calcular el monto total del pedido de forma automática en función del servicio definido por la lavandería.
+
+### El sistema debe permitir:
+
+* Definir un monto base.
+* Aplicar un descuento opcional.
+* Mostrar el total final a cobrar.
+
+### Lógica del descuento
+
+El usuario debe poder ingresar un descuento en monto fijo, no necesariamente porcentual.
+
+Ejemplo:
+
+* Monto base: S/ 30
+* Descuento: S/ 5
+* Total final: S/ 25
+
+---
+
+## 6.5 Estados del pedido
+
+La aplicación debe incluir un flujo de estados para los servicios o pedidos.
+
+### Estados propuestos
+
+1. **Recibido**
+2. **En proceso**
+3. **Listo para recoger**
+4. **Entregado**
+
+### Reglas del flujo
+
+* El estado debe poder cambiarse manualmente.
+* Debe ser fácil de filtrar y visualizar.
+* Debe permitir identificar pedidos pendientes y pedidos cerrados.
+
+---
+
+## 6.6 Historial de pedidos
+
+Debe existir un módulo de historial donde se pueda consultar toda la actividad registrada.
+
+### El historial debe permitir:
+
+* Ver pedidos por día.
+* Ver pedidos por rango de fechas.
+* Buscar por cliente.
+* Buscar por número de celular.
+* Buscar por estado del pedido.
+* Ver pedidos entregados y pendientes.
+
+---
+
+## 6.7 Comprobante digital
+
+La aplicación debe generar un comprobante digital de cada pedido o servicio.
+
+### El comprobante debe incluir:
+
+* Nombre del cliente
+* Número de WhatsApp o celular
+* Detalle del pedido
+* Kilos o prendas registradas
+* Fecha de ingreso
+* Fecha estimada de entrega
+* Monto base
+* Descuento aplicado, si existe
+* Total final
+* Estado del pedido
+
+### Funciones del comprobante
+
+1. **Copiar imagen**
+
+   * Permite copiar el comprobante como imagen para pegarlo en WhatsApp Web u otra plataforma de mensajería.
+
+2. **Enviar por WhatsApp**
+
+   * Disponible especialmente en celular.
+   * Debe abrir el chat de WhatsApp del cliente usando el número registrado.
+   * Debe facilitar el envío directo del comprobante.
+
+### Observación
+
+No se requiere impresión física de ticket en esta versión.
+El comprobante será completamente digital.
+
+---
+
+# 7. Herramientas recomendadas para lavanderías
+
+Además de las funciones base, el sistema debería contemplar herramientas que hagan la app realmente útil para una lavandería:
+
+* Búsqueda rápida de pedidos.
+* Registro de clientes frecuentes.
+* Historial de compras o servicios por cliente.
+* Filtro por estado del pedido.
+* Filtro por fecha.
+* Comprobante digital compartible.
+* Descuento opcional.
+* Control de entrega pendiente.
+* Alertas visuales para pedidos listos.
+* Observaciones internas por pedido.
+* Dashboard simple con pedidos activos y entregados.
+
+La idea es que la aplicación resuelva el trabajo operativo real del negocio y no solo actúe como una libreta digital.
+
+---
+
+# 8. Compatibilidad y comportamiento por dispositivo
+
+## 8.1 En PC
+
+La aplicación debe funcionar de manera fluida en computadoras de escritorio o laptops.
+
+### Debe permitir:
+
+* Registro de clientes y pedidos.
+* Consultar historial.
+* Generar comprobantes digitales.
+* Copiar comprobantes como imagen.
+* Gestionar licencias.
+* Suspender o reactivar la operación según el estado de licencia.
+
+## 8.2 En celular
+
+La aplicación debe adaptarse a formato móvil.
+
+### Debe permitir:
+
+* Registrar pedidos desde el teléfono.
+* Enviar comprobantes por WhatsApp.
+* Consultar estados de pedido.
+* Buscar clientes.
+* Visualizar el estado de la licencia.
+
+## 8.3 En tablet
+
+La aplicación debe verse correctamente en tablet y mantener una experiencia cómoda para atención rápida.
+
+---
+
+# 9. Pantallas mínimas sugeridas
+
+La aplicación debería contemplar, como mínimo, las siguientes pantallas:
+
+1. **Pantalla de inicio / login**
+2. **Pantalla de validación de licencia**
+3. **Panel principal / dashboard**
+4. **Registro de cliente y pedido**
+5. **Detalle del pedido**
+6. **Comprobante digital**
+7. **Historial de pedidos**
+8. **Búsqueda de clientes**
+9. **Configuración**
+10. **Pantalla de licencia suspendida**
+
+---
+
+# 10. Panel de administración del proveedor
+
+El proveedor debe tener control sobre las licencias emitidas.
+
+## El proveedor debe poder:
+
+* Crear licencias.
+* Activar licencias.
+* Suspender licencias.
+* Reactivar licencias.
+* Cambiar el estado de una licencia.
+* Asignar una nueva licencia si el cliente cambia de dispositivo.
+
+Este control es esencial para garantizar el cobro, la trazabilidad y la protección del software.
+
+---
+
+# 11. Reglas del mantenimiento anual
+
+El mantenimiento anual es obligatorio para todos los clientes que descarguen la aplicación.
+
+## Incluye
+
+* Soporte técnico.
+* Corrección de errores.
+* Actualizaciones automáticas.
+* Asistencia por incidencias del sistema.
+
+## No incluye
+
+* Nuevas funcionalidades a medida.
+* Cambios grandes de alcance.
+* Integraciones adicionales no previstas.
+
+Si el cliente desea una funcionalidad nueva o especial, esa mejora debe cotizarse aparte.
+
+---
+
+# 12. Manejo de pagos
+
+## 12.1 Pago único
+
+El pago único cubre el derecho de uso inicial de la aplicación.
+
+### Opciones
+
+* Pago total de S/ 200.
+* Pago dividido en dos cuotas de S/ 100.
+
+## 12.2 Renovación anual
+
+Una vez cumplido el periodo de mantenimiento, el cliente debe pagar S/ 60 anuales para conservar el servicio activo.
+
+## 12.3 Incumplimiento de pago
+
+Si el cliente no paga:
+
+* La licencia se suspende.
+* La aplicación se bloquea.
+* El sistema debe mostrar un mensaje claro de suspensión.
+* El cliente debe contactar al proveedor para regularizar.
+
+---
+
+# 13. Consideraciones técnicas importantes
+
+## 13.1 Validación en línea
+
+La aplicación debe tener capacidad de revisar el estado de licencia usando conexión a internet o datos móviles.
+
+## 13.2 Un solo dispositivo por licencia
+
+Cada licencia debe estar asociada a un solo equipo.
+
+## 13.3 Reactivación por cambio de equipo
+
+Si el cliente cambia de dispositivo, la licencia anterior no debe transferirse automáticamente. Debe solicitar una reactivación o nuevo código al proveedor.
+
+## 13.4 Control central del proveedor
+
+El sistema debe diseñarse de modo que el proveedor tenga control real sobre la activación y desactivación de cada licencia.
+
+---
+
+# 14. Evolución futura del sistema
+
+Más adelante, cuando el negocio tenga suficientes clientes, se puede desarrollar una aplicación interna para el proveedor que permita:
+
+* Ver quién ha pagado.
+* Ver quién debe renovar.
+* Revisar fechas de vencimiento.
+* Llevar alertas de cobro.
+* Gestionar licencias activas y suspendidas.
+
+Por ahora, esta gestión puede llevarse de forma manual hasta que el volumen de clientes justifique una herramienta administrativa adicional.
+
+---
+
+# 15. Expansión futura
+
+Si en el futuro el producto tiene buena recepción, se podrían agregar funciones adicionales con costo extra, por ejemplo:
+
+* Nuevos módulos de administración.
+* Reportes avanzados.
+* Integración con otras herramientas.
+* Automatización de mensajes.
+* Mejoras específicas por negocio.
+
+Estas funcionalidades no forman parte del alcance base y deben cotizarse de manera separada.
+
+---
+
+# 16. Resumen de reglas clave
+
+* La aplicación es solo para lavanderías.
+* Debe funcionar en PC, celular y tablet.
+* La licencia es de un solo dispositivo.
+* El pago único es S/ 200.
+* El pago en dos cuotas es opcional.
+* El mantenimiento anual es S/ 60 y obligatorio.
+* Si el cliente no paga, la licencia se suspende.
+* La app debe bloquearse completamente cuando la licencia esté suspendida.
+* El cliente debe contactar al proveedor para reactivar.
+* La app debe emitir comprobante digital.
+* El comprobante debe poder copiarse como imagen.
+* En celular, debe existir opción de enviar por WhatsApp.
+* El descuento en el comprobante es opcional y puede ser en monto fijo.
+* Las funciones a medida adicionales tienen costo extra.
+
+---
+
+# 17. Cierre
+
+La aplicación debe construirse como una solución simple, clara y operativa para lavanderías, con control de licencias, comprobantes digitales y gestión de pedidos. El enfoque principal debe ser utilidad real, facilidad de uso y control del proveedor sobre el uso del software.
+
+Este documento debe tomarse como base funcional y técnica para iniciar el desarrollo.

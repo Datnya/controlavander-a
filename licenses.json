@@ -1,0 +1,17 @@
+[
+  {
+    "code": "TEST-1234-ABCD",
+    "activated_device": "",
+    "status": "active"
+  },
+  {
+    "code": "DEMO-9999-WXYZ",
+    "activated_device": "",
+    "status": "active"
+  },
+  {
+    "code": "EXPIRED-0000",
+    "activated_device": "some-old-machine-id",
+    "status": "suspended"
+  }
+]

@@ -1,0 +1,28 @@
+{
+  "name": "control-de-lavanderia",
+  "productName": "Control de Lavandería",
+  "version": "1.0.0",
+  "description": "Software de gestión integral para negocios de lavandería. Control de clientes, pedidos, servicios y comprobantes digitales.",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "make": "electron-forge make",
+    "package": "electron-forge package"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.1.2",
+    "node-machine-id": "^1.1.12",
+    "html-to-image": "^1.11.11"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "@electron-forge/cli": "^7.0.0",
+    "@electron-forge/maker-squirrel": "^7.0.0",
+    "@electron/rebuild": "^3.0.0",
+    "electron-squirrel-startup": "^1.0.1"
+  },
+  "author": "Foxy Studios",
+  "license": "UNLICENSED",
+  "private": true
+}
