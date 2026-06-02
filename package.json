@@ -25,5 +25,9 @@
   },
   "author": "Foxy Studios",
   "license": "UNLICENSED",
-  "private": true
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Datnya/controlavander-a.git"
+  }
 }
