@@ -35,18 +35,40 @@ function fetchLicenses() {
  * @param {string} code - Código de licencia
  * @returns {Promise<Object>} Resultado de la activación
  */
+/**
+ * Extrae el array de licencias del JSON descargado.
+ * Soporta tanto formato array directo como objeto con propiedad 'licenses'.
+ * @param {any} data - Datos JSON descargados
+ * @returns {Array|null}
+ */
+function extractLicensesArray(data) {
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.licenses)) return data.licenses;
+  return null;
+}
+
 async function activateLicense(code) {
   try {
     const machineId = getDeviceId();
-    const licensesData = await fetchLicenses();
+    console.log('[License] Activando licencia. Machine ID:', machineId);
+    console.log('[License] Código ingresado:', code.trim().toUpperCase());
 
-    if (!licensesData || !licensesData.licenses) {
-      return { success: false, error: 'No se pudieron obtener las licencias' };
+    const licensesData = await fetchLicenses();
+    console.log('[License] Datos recibidos del servidor:', JSON.stringify(licensesData).substring(0, 300));
+
+    const licenses = extractLicensesArray(licensesData);
+
+    if (!licenses) {
+      console.error('[License] Formato de licencias inválido:', typeof licensesData);
+      return { success: false, error: 'No se pudieron obtener las licencias. Formato inválido.' };
     }
 
-    const license = licensesData.licenses.find(l => l.code === code.trim().toUpperCase());
+    console.log('[License] Licencias encontradas:', licenses.length);
+
+    const license = licenses.find(l => l.code === code.trim().toUpperCase());
 
     if (!license) {
+      console.log('[License] Código no encontrado entre:', licenses.map(l => l.code));
       return { success: false, error: 'Código de licencia no válido' };
     }
 
@@ -61,6 +83,7 @@ async function activateLicense(code) {
 
     // Guardar licencia localmente
     db.saveLicense(code.trim().toUpperCase(), machineId);
+    console.log('[License] Licencia guardada exitosamente');
 
     return { 
       success: true, 
@@ -71,6 +94,7 @@ async function activateLicense(code) {
       } 
     };
   } catch (error) {
+    console.error('[License] Error durante activación:', error);
     return { success: false, error: error.message || 'Error al activar la licencia' };
   }
 }
@@ -88,12 +112,13 @@ async function validateLicense() {
 
     const machineId = getDeviceId();
     const licensesData = await fetchLicenses();
+    const licenses = extractLicensesArray(licensesData);
 
-    if (!licensesData || !licensesData.licenses) {
+    if (!licenses) {
       return { valid: false, reason: 'no-connection' };
     }
 
-    const remoteLicense = licensesData.licenses.find(l => l.code === localLicense.code);
+    const remoteLicense = licenses.find(l => l.code === localLicense.code);
 
     if (!remoteLicense) {
       db.updateLicenseStatus('suspended');
@@ -105,7 +130,7 @@ async function validateLicense() {
       return { valid: false, reason: 'suspended' };
     }
 
-    if (remoteLicense.activated_device && remoteLicense.activated_device !== machineId) {
+    if (remoteLicense.activated_device && remoteLicense.activated_device !== '' && remoteLicense.activated_device !== machineId) {
       db.updateLicenseStatus('suspended');
       return { valid: false, reason: 'wrong-device' };
     }
@@ -116,6 +141,7 @@ async function validateLicense() {
 
     return { valid: true };
   } catch (error) {
+    console.error('[License] Error durante validación:', error);
     // Sin conexión - no modificar estado local
     return { valid: false, reason: 'no-connection', error: error.message };
   }

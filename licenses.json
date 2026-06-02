@@ -1,17 +1,22 @@
-[
-  {
-    "code": "TEST-1234-ABCD",
-    "activated_device": "",
-    "status": "active"
-  },
-  {
-    "code": "DEMO-9999-WXYZ",
-    "activated_device": "",
-    "status": "active"
-  },
-  {
-    "code": "EXPIRED-0000",
-    "activated_device": "some-old-machine-id",
-    "status": "suspended"
-  }
-]
+{
+  "licenses": [
+    {
+      "code": "TEST-1234-ABCD",
+      "client_name": "Cliente de Prueba",
+      "activated_device": "",
+      "status": "active"
+    },
+    {
+      "code": "DEMO-9999-WXYZ",
+      "client_name": "Demo Lavandería",
+      "activated_device": "",
+      "status": "active"
+    },
+    {
+      "code": "EXPIRED-0000",
+      "client_name": "Licencia Expirada",
+      "activated_device": "some-old-machine-id",
+      "status": "suspended"
+    }
+  ]
+}
