@@ -72,55 +72,56 @@ window.orderDetailPage = {
             </div>
           </div>
 
-          <div class="card">
-            <h3 class="font-semibold text-md mb-4 border-bottom pb-3">Detalle del Servicio</h3>
-            
-            <div class="flex-between align-center mb-4">
-              <div class="flex-align gap-3">
-                <div class="stat-icon primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="6.5"/></svg></div>
-                <div>
-                  <div class="font-bold text-gray-800" id="detailServiceName">-</div>
-                  <div class="text-sm text-gray-500" id="detailServiceAmount">-</div>
+          <div class="grid grid-2">
+            <div class="card">
+              <h3 class="font-semibold text-md mb-4 border-bottom pb-3">Detalle del Servicio</h3>
+              
+              <div class="flex-between align-center mb-4">
+                <div class="flex-align gap-3">
+                  <div class="stat-icon primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="6.5"/></svg></div>
+                  <div>
+                    <div class="font-bold text-gray-800" id="detailServiceName">-</div>
+                    <div class="text-sm text-gray-500" id="detailServiceAmount">-</div>
+                  </div>
                 </div>
+                <div class="font-bold text-xl" id="detailTotalAmount">-</div>
               </div>
-              <div class="font-bold text-xl" id="detailTotalAmount">-</div>
+
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="text-sm font-semibold text-gray-600 mb-2">Observaciones de prendas:</div>
+                <p class="text-sm text-gray-700" id="detailNotes">-</p>
+              </div>
             </div>
 
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <div class="text-sm font-semibold text-gray-600 mb-2">Observaciones de prendas:</div>
-              <p class="text-sm text-gray-700" id="detailNotes">-</p>
+            <div class="card">
+              <h3 class="font-semibold text-md mb-4 border-bottom pb-3 flex-between align-center">
+                <span>Estado de Pago</span>
+                <span id="detailPaymentBadge"></span>
+              </h3>
+              
+              <div class="flex-between align-center mb-3">
+                <span class="text-gray-600">Total del Servicio:</span>
+                <span class="font-bold text-lg" id="detailPaymentTotal">-</span>
+              </div>
+              
+              <div class="flex-between align-center mb-3 text-success" id="detailPaymentAdvanceRow" style="display: none;">
+                <span>Adelanto Pagado:</span>
+                <span class="font-bold" id="detailPaymentAdvance">-</span>
+              </div>
+              
+              <div class="flex-between align-center border-top pt-3 mt-3">
+                <span class="text-gray-800 font-medium">Saldo Pendiente:</span>
+                <span class="font-bold text-xl text-danger" id="detailPaymentBalance">-</span>
+              </div>
+
+              <div id="paymentActionContainer" class="mt-4 pt-4 border-top" style="display: none;">
+                <button class="btn btn-success w-100" style="justify-content: center;" onclick="orderDetailPage.markAsPaid()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                  Cobrar Saldo
+                </button>
+              </div>
             </div>
           </div>
-
-          <div class="card">
-            <h3 class="font-semibold text-md mb-4 border-bottom pb-3 flex-between align-center">
-              <span>Estado de Pago</span>
-              <span id="detailPaymentBadge"></span>
-            </h3>
-            
-            <div class="flex-between align-center mb-3">
-              <span class="text-gray-600">Total del Servicio:</span>
-              <span class="font-bold text-lg" id="detailPaymentTotal">-</span>
-            </div>
-            
-            <div class="flex-between align-center mb-3 text-success" id="detailPaymentAdvanceRow" style="display: none;">
-              <span>Adelanto Pagado:</span>
-              <span class="font-bold" id="detailPaymentAdvance">-</span>
-            </div>
-            
-            <div class="flex-between align-center border-top pt-3 mt-3">
-              <span class="text-gray-800 font-medium">Saldo Pendiente:</span>
-              <span class="font-bold text-xl text-danger" id="detailPaymentBalance">-</span>
-            </div>
-
-            <div id="paymentActionContainer" class="mt-4 pt-4 border-top" style="display: none;">
-              <button class="btn btn-success w-100" style="justify-content: center;" onclick="orderDetailPage.markAsPaid()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Cobrar Saldo y Marcar Pagado
-              </button>
-            </div>
-          </div>
-
         </div>
 
         <!-- Columna Derecha: Acciones y Estado -->

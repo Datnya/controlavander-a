@@ -16,9 +16,9 @@ window.reportsPage = {
               <!-- Los controles cambiarán según el periodo -->
             </div>
             
-            <button class="btn btn-secondary btn-sm" onclick="reportsPage.exportCSV()">
+            <button class="btn btn-secondary btn-sm" onclick="reportsPage.showExportModal()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Exportar CSV
+              Exportar
             </button>
             <button class="btn btn-danger btn-sm" onclick="reportsPage.clearHistory()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
@@ -252,11 +252,44 @@ window.reportsPage = {
     container.innerHTML = html;
   },
 
-  async exportCSV() {
+  showExportModal() {
     if (!this.data || !this.data.income_by_date) {
       toast.error('Error', 'No hay datos para exportar');
       return;
     }
+
+    const modalInstance = modal.show({
+      title: 'Exportar Reporte',
+      content: `
+        <p class="text-sm text-gray-600 mb-4">¿En qué formato deseas exportar el reporte actual?</p>
+        <div class="flex-col gap-3">
+          <button class="btn btn-primary w-100" style="justify-content: center;" id="btnExportExcel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Excel (CSV)
+          </button>
+          <button class="btn btn-secondary w-100" style="justify-content: center;" id="btnExportPDF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Documento PDF
+          </button>
+        </div>
+      `,
+      size: 'sm',
+      showFooter: false
+    });
+
+    setTimeout(() => {
+      document.getElementById('btnExportExcel').addEventListener('click', () => {
+        modalInstance.close();
+        this.exportCSV();
+      });
+      document.getElementById('btnExportPDF').addEventListener('click', () => {
+        modalInstance.close();
+        window.print();
+      });
+    }, 100);
+  },
+
+  async exportCSV() {
 
     // Construir CSV string
     let csv = 'Fecha,Total Pedidos,Ingresos\n';

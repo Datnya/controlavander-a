@@ -455,35 +455,61 @@ function getDashboardStats() {
 }
 
 function getDailySummary(date) {
-  const orders = db.prepare(`
-    SELECT o.*, c.full_name as client_name, s.name as service_name
-    FROM orders o
-    JOIN clients c ON o.client_id = c.id
-    JOIN services s ON o.service_id = s.id
-    WHERE DATE(o.received_date) = ?
-    ORDER BY o.id DESC
-  `).all(date);
-
   const summary = db.prepare(`
     SELECT 
       COUNT(*) as total_orders,
+      COUNT(DISTINCT client_id) as unique_clients,
       COALESCE(SUM(
         CASE 
           WHEN payment_status = 'paid' THEN final_amount
           WHEN payment_status = 'partial' THEN advance_payment
           ELSE 0
         END
-      ), 0) as total_income,
-      COALESCE(SUM(discount), 0) as total_discounts,
-      COALESCE(AVG(final_amount), 0) as avg_per_order
+      ), 0) as total_income
     FROM orders WHERE DATE(received_date) = ?
   `).get(date);
 
-  return { orders, summary };
+  const services_breakdown = db.prepare(`
+    SELECT s.name as service_name, COUNT(*) as order_count,
+    COALESCE(SUM(
+      CASE 
+        WHEN payment_status = 'paid' THEN final_amount
+        WHEN payment_status = 'partial' THEN advance_payment
+        ELSE 0
+      END
+    ), 0) as total_amount
+    FROM orders o
+    JOIN services s ON o.service_id = s.id
+    WHERE DATE(o.received_date) = ?
+    GROUP BY s.id
+    ORDER BY total_amount DESC
+  `).all(date);
+
+  return { 
+    total_income: summary.total_income,
+    total_orders: summary.total_orders,
+    unique_clients: summary.unique_clients,
+    income_by_date: [{ date, total_orders: summary.total_orders, total: summary.total_income }],
+    services_breakdown
+  };
 }
 
 function getWeeklySummary(startDate, endDate) {
-  const dailyData = db.prepare(`
+  const summary = db.prepare(`
+    SELECT 
+      COUNT(*) as total_orders,
+      COUNT(DISTINCT client_id) as unique_clients,
+      COALESCE(SUM(
+        CASE 
+          WHEN payment_status = 'paid' THEN final_amount
+          WHEN payment_status = 'partial' THEN advance_payment
+          ELSE 0
+        END
+      ), 0) as total_income
+    FROM orders WHERE DATE(received_date) BETWEEN ? AND ?
+  `).get(startDate, endDate);
+
+  const income_by_date = db.prepare(`
     SELECT 
       DATE(received_date) as date,
       COUNT(*) as total_orders,
@@ -493,36 +519,57 @@ function getWeeklySummary(startDate, endDate) {
           WHEN payment_status = 'partial' THEN advance_payment
           ELSE 0
         END
-      ), 0) as total_income
+      ), 0) as total
     FROM orders 
     WHERE DATE(received_date) BETWEEN ? AND ?
     GROUP BY DATE(received_date)
     ORDER BY date ASC
   `).all(startDate, endDate);
 
-  const summary = db.prepare(`
-    SELECT 
-      COUNT(*) as total_orders,
-      COALESCE(SUM(
-        CASE 
-          WHEN payment_status = 'paid' THEN final_amount
-          WHEN payment_status = 'partial' THEN advance_payment
-          ELSE 0
-        END
-      ), 0) as total_income,
-      COALESCE(SUM(discount), 0) as total_discounts,
-      COALESCE(AVG(final_amount), 0) as avg_per_order
-    FROM orders WHERE DATE(received_date) BETWEEN ? AND ?
-  `).get(startDate, endDate);
+  const services_breakdown = db.prepare(`
+    SELECT s.name as service_name, COUNT(*) as order_count,
+    COALESCE(SUM(
+      CASE 
+        WHEN payment_status = 'paid' THEN final_amount
+        WHEN payment_status = 'partial' THEN advance_payment
+        ELSE 0
+      END
+    ), 0) as total_amount
+    FROM orders o
+    JOIN services s ON o.service_id = s.id
+    WHERE DATE(o.received_date) BETWEEN ? AND ?
+    GROUP BY s.id
+    ORDER BY total_amount DESC
+  `).all(startDate, endDate);
 
-  return { dailyData, summary };
+  return { 
+    total_income: summary.total_income,
+    total_orders: summary.total_orders,
+    unique_clients: summary.unique_clients,
+    income_by_date,
+    services_breakdown
+  };
 }
 
 function getMonthlySummary(year, month) {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
   const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
 
-  const dailyData = db.prepare(`
+  const summary = db.prepare(`
+    SELECT 
+      COUNT(*) as total_orders,
+      COUNT(DISTINCT client_id) as unique_clients,
+      COALESCE(SUM(
+        CASE 
+          WHEN payment_status = 'paid' THEN final_amount
+          WHEN payment_status = 'partial' THEN advance_payment
+          ELSE 0
+        END
+      ), 0) as total_income
+    FROM orders WHERE DATE(received_date) BETWEEN ? AND ?
+  `).get(startDate, endDate);
+
+  const income_by_date = db.prepare(`
     SELECT 
       DATE(received_date) as date,
       COUNT(*) as total_orders,
@@ -532,29 +579,36 @@ function getMonthlySummary(year, month) {
           WHEN payment_status = 'partial' THEN advance_payment
           ELSE 0
         END
-      ), 0) as total_income
+      ), 0) as total
     FROM orders 
     WHERE DATE(received_date) BETWEEN ? AND ?
     GROUP BY DATE(received_date)
     ORDER BY date ASC
   `).all(startDate, endDate);
 
-  const summary = db.prepare(`
-    SELECT 
-      COUNT(*) as total_orders,
-      COALESCE(SUM(
-        CASE 
-          WHEN payment_status = 'paid' THEN final_amount
-          WHEN payment_status = 'partial' THEN advance_payment
-          ELSE 0
-        END
-      ), 0) as total_income,
-      COALESCE(SUM(discount), 0) as total_discounts,
-      COALESCE(AVG(final_amount), 0) as avg_per_order
-    FROM orders WHERE DATE(received_date) BETWEEN ? AND ?
-  `).get(startDate, endDate);
+  const services_breakdown = db.prepare(`
+    SELECT s.name as service_name, COUNT(*) as order_count,
+    COALESCE(SUM(
+      CASE 
+        WHEN payment_status = 'paid' THEN final_amount
+        WHEN payment_status = 'partial' THEN advance_payment
+        ELSE 0
+      END
+    ), 0) as total_amount
+    FROM orders o
+    JOIN services s ON o.service_id = s.id
+    WHERE DATE(o.received_date) BETWEEN ? AND ?
+    GROUP BY s.id
+    ORDER BY total_amount DESC
+  `).all(startDate, endDate);
 
-  return { dailyData, summary };
+  return { 
+    total_income: summary.total_income,
+    total_orders: summary.total_orders,
+    unique_clients: summary.unique_clients,
+    income_by_date,
+    services_breakdown
+  };
 }
 
 function getIncomeByDateRange(startDate, endDate) {

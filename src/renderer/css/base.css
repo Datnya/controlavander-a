@@ -210,3 +210,21 @@ input::-webkit-inner-spin-button {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ==================== IMPRESIÓN ==================== */
+@media print {
+  .titlebar, .sidebar, #reportPeriodTabs, #reportControls, button {
+    display: none !important;
+  }
+  .main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+  body {
+    background: white !important;
+  }
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+}
