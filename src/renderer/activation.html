@@ -27,7 +27,7 @@
       <h1 class="activation-title">Bienvenido</h1>
       <p class="activation-subtitle">Ingrese su código de licencia para activar la aplicación</p>
       
-      <input type="text" id="licenseCode" class="activation-input" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19" autocomplete="off" autofocus>
+      <input type="text" id="licenseCode" class="activation-input" placeholder="Ingrese su código de licencia" maxlength="50" autocomplete="off" autofocus>
       
       <button id="activateBtn" class="btn btn-primary activation-btn" onclick="activateLicense()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
@@ -49,15 +49,9 @@
     const loadingEl = document.getElementById('loadingIndicator');
     const errorEl = document.getElementById('errorMessage');
 
-    // Formatear input mientras escribe
+    // Convertir a mayúsculas mientras escribe
     codeInput.addEventListener('input', (e) => {
-      let value = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-      let formatted = '';
-      for (let i = 0; i < value.length && i < 16; i++) {
-        if (i > 0 && i % 4 === 0) formatted += '-';
-        formatted += value[i];
-      }
-      e.target.value = formatted;
+      e.target.value = e.target.value.toUpperCase();
     });
 
     codeInput.addEventListener('keydown', (e) => {
@@ -76,15 +70,19 @@
       errorEl.classList.remove('show');
 
       try {
+        console.log('[Activation] Enviando código:', code);
         const result = await window.api.license.activate(code);
-        if (result.success) {
+        console.log('[Activation] Resultado recibido:', JSON.stringify(result));
+        
+        if (result && result.success) {
           // Licencia activada — recargar la app
           await window.api.app.loadPage('index.html');
         } else {
-          showError(result.error || 'No se pudo activar la licencia');
+          showError((result && result.error) || 'No se pudo activar la licencia');
         }
       } catch (err) {
-        showError('Error de conexión. Verifique su internet e intente nuevamente.');
+        console.error('[Activation] Excepción:', err);
+        showError('Error de conexión: ' + (err.message || 'Verifique su internet e intente nuevamente.'));
       } finally {
         activateBtn.disabled = false;
         loadingEl.classList.remove('show');

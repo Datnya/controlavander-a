@@ -73,5 +73,7 @@ contextBridge.exposeInMainWorld('api', {
     maximize: () => ipcRenderer.invoke('app:maximize'),
     close: () => ipcRenderer.invoke('app:close'),
     isMaximized: () => ipcRenderer.invoke('app:isMaximized'),
+    loadPage: (page) => ipcRenderer.invoke('app:loadPage', page),
+    relaunch: () => ipcRenderer.invoke('app:relaunch'),
   }
 });

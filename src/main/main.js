@@ -1,6 +1,9 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
+// Auto-actualizador de GitHub
+require('update-electron-app')();
+
 // Manejar eventos de Squirrel (instalador Windows)
 if (require('electron-squirrel-startup')) app.quit();
 

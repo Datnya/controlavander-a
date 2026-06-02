@@ -12,14 +12,15 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.1.2",
+    "html-to-image": "^1.11.11",
     "node-machine-id": "^1.1.12",
-    "html-to-image": "^1.11.11"
+    "update-electron-app": "^3.2.0"
   },
   "devDependencies": {
-    "electron": "^31.0.0",
     "@electron-forge/cli": "^7.0.0",
     "@electron-forge/maker-squirrel": "^7.0.0",
     "@electron/rebuild": "^3.0.0",
+    "electron": "^31.0.0",
     "electron-squirrel-startup": "^1.0.1"
   },
   "author": "Foxy Studios",
