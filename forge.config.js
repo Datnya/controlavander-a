@@ -10,12 +10,8 @@ module.exports = {
   rebuildConfig: {},
   makers: [
     {
-      name: '@electron-forge/maker-squirrel',
-      config: {
-        name: 'ControlLavanderia',
-        setupIcon: './assets/icon.ico',
-        title: 'Control de Lavandería'
-      }
+      name: '@electron-forge/maker-zip',
+      platforms: ['win32']
     }
   ]
 };

@@ -1,8 +1,8 @@
 {
   "name": "control-de-lavanderia",
-  "productName": "Control de Lavandería",
+  "productName": "Control de Lavanderia",
   "version": "1.0.0",
-  "description": "Software de gestión integral para negocios de lavandería. Control de clientes, pedidos, servicios y comprobantes digitales.",
+  "description": "Software de gestion integral para negocios de lavanderia. Control de clientes, pedidos, servicios y comprobantes digitales.",
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",
@@ -19,6 +19,7 @@
   "devDependencies": {
     "@electron-forge/cli": "^7.0.0",
     "@electron-forge/maker-squirrel": "^7.0.0",
+    "@electron-forge/maker-zip": "^7.11.2",
     "@electron/rebuild": "^3.0.0",
     "electron": "^31.0.0",
     "electron-squirrel-startup": "^1.0.1"
