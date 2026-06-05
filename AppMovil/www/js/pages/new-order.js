@@ -199,8 +199,10 @@ window.newOrderPage = {
         if (res.success && res.data.length > 0) {
           let html = '';
           res.data.slice(0, 5).forEach(c => {
+            const safeName = c.full_name ? c.full_name.replace(/'/g, "\\'") : '';
+            const safePhone = c.phone ? c.phone.replace(/'/g, "\\'") : '';
             html += `
-              <div class="autocomplete-item" onclick="newOrderPage.selectClient(${c.id}, '${c.full_name}', '${c.phone || ''}')">
+              <div class="autocomplete-item" onclick="newOrderPage.selectClient(${c.id}, '${safeName}', '${safePhone}')">
                 <span class="font-medium">${c.full_name}</span>
                 <span class="client-phone">${c.phone || c.document_id || ''}</span>
               </div>
@@ -386,6 +388,9 @@ window.newOrderPage = {
       }
 
       const orderData = {
+        order_number: document.getElementById('nextOrderNumber').textContent,
+        status: 'received',
+        received_date: new Date().toISOString(),
         client_id: this.selectedClient,
         service_id: this.selectedService.id,
         weight_kg: weight,
@@ -402,9 +407,9 @@ window.newOrderPage = {
       const res = await window.api.orders.create(orderData);
       
       if (res.success) {
-        toast.success('Pedido Creado', `El pedido ${res.data.order_number} se guardó correctamente`);
+        toast.success('Pedido Creado', `El pedido se guardó correctamente`);
         // Redirigir al detalle del pedido para imprimir recibo
-        app.navigate('order-detail', { id: res.data.id });
+        app.navigate('order-detail', { id: res.data });
       } else {
         throw new Error(res.error);
       }

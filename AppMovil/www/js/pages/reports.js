@@ -15,7 +15,7 @@ window.reportsPage = {
             <!-- Los controles cambiarán según el periodo -->
           </div>
         </div>
-        <div class="flex-align gap-3" style="margin-top: 24px; justify-content: flex-end;">
+        <div class="flex-align" style="margin-top: 24px; justify-content: flex-end; gap: 24px;">
           <button class="btn btn-secondary btn-sm" onclick="reportsPage.showExportModal()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Exportar
@@ -261,7 +261,7 @@ window.reportsPage = {
       title: 'Exportar Reporte',
       content: `
         <p class="text-sm text-gray-600 mb-4">¿En qué formato deseas exportar el reporte actual?</p>
-        <div class="flex-col gap-3">
+        <div class="flex-col" style="gap: 16px;">
           <button class="btn btn-primary w-100" style="justify-content: center;" id="btnExportExcel">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             Excel (CSV)

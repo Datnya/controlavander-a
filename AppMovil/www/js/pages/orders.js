@@ -16,6 +16,7 @@ window.ordersPage = {
             <option value="in_progress">En Proceso</option>
             <option value="ready">Listos para recoger</option>
             <option value="delivered">Entregados</option>
+            <option value="pending_payment">Pagos Pendientes</option>
             <option value="all">Todos los pedidos</option>
           </select>
         </div>
@@ -80,7 +81,9 @@ window.ordersPage = {
         apiFilters.search = this.filters.search;
       }
 
-      if (this.filters.status !== 'all' && this.filters.status !== 'active') {
+      if (this.filters.status === 'pending_payment') {
+        apiFilters.payment = 'pending_or_partial';
+      } else if (this.filters.status !== 'all' && this.filters.status !== 'active') {
         apiFilters.status = this.filters.status;
       }
 
@@ -107,6 +110,7 @@ window.ordersPage = {
 
   renderTable() {
     const tbody = document.getElementById('ordersTableBody');
+    if (!tbody) return;
     
     if (this.data.length === 0) {
       tbody.innerHTML = `
@@ -138,7 +142,11 @@ window.ordersPage = {
           <td class="text-gray-500 text-sm">
             ${format.datetime(order.received_date)}
           </td>
-          <td class="font-semibold text-gray-900">${format.currency(order.final_amount)}</td>
+          <td class="font-semibold text-gray-900">
+            ${format.currency(order.final_amount)}
+            ${(order.payment_status === 'pending' || order.payment_status === 'partial' || !order.payment_status) ? 
+              `<div class="text-xs text-danger font-medium mt-1">Falta: ${format.currency(Math.max(0, order.final_amount - (order.advance_payment || 0)))}</div>` : ''}
+          </td>
           <td>${format.statusBadge(order.status)}</td>
           <td class="text-right">
             <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); app.navigate('receipt', {id: ${order.id}})" title="Ver Comprobante">

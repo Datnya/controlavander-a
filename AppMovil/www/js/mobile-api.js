@@ -30,6 +30,11 @@ db.on('populate', () => {
 
 // Utilidad para obtener fechas
 const getNow = () => new Date().toISOString();
+const getLocalString = (dateString) => {
+    const d = dateString ? new Date(dateString) : new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split('T')[0];
+};
 
 // Wrapper para simular el comportamiento de IPC (async y retorna {success, data} o {success, error})
 const wrap = async (fn) => {
@@ -82,6 +87,18 @@ window.api = {
                 service_name: servicesMap.get(o.service_id)?.name || 'Desconocido'
             }));
 
+            if (filters.payment === 'pending_or_partial') {
+                orders = orders.filter(o => o.payment_status === 'pending' || o.payment_status === 'partial' || !o.payment_status);
+            }
+
+            if (filters.dateFrom && filters.dateTo) {
+                orders = orders.filter(o => {
+                    if (!o.received_date) return false;
+                    const d = o.received_date.split('T')[0];
+                    return d >= filters.dateFrom && d <= filters.dateTo;
+                });
+            }
+
             if (filters.search) {
                 const q = filters.search.toLowerCase();
                 orders = orders.filter(o => 
@@ -94,8 +111,12 @@ window.api = {
         getById: (id) => wrap(async () => {
             const order = await db.orders.get(id);
             if (!order) throw new Error("Order not found");
-            order.client = await db.clients.get(order.client_id);
-            order.service = await db.services.get(order.service_id);
+            const client = await db.clients.get(order.client_id);
+            const service = await db.services.get(order.service_id);
+            order.client_name = client ? client.full_name : 'Desconocido';
+            order.client_phone = client ? client.phone : '';
+            order.client_doc = client ? client.document_id : '';
+            order.service_name = service ? service.name : 'Desconocido';
             return order;
         }),
         create: (data) => wrap(async () => {
@@ -125,13 +146,20 @@ window.api = {
             return orders.map(o => ({
                 ...o,
                 client_name: clientsMap.get(o.client_id)?.full_name || 'Desconocido',
+                client_phone: clientsMap.get(o.client_id)?.phone || '',
                 service_name: servicesMap.get(o.service_id)?.name || 'Desconocido'
             }));
         }),
         getToday: () => wrap(async () => {
-            const today = new Date().toISOString().split('T')[0];
-            const orders = await db.orders.filter(o => o.received_date && o.received_date.startsWith(today)).toArray();
-            return orders;
+            const today = getLocalString();
+            const orders = await db.orders.filter(o => o.received_date && getLocalString(o.received_date) === today).toArray();
+            const clientsMap = new Map((await db.clients.toArray()).map(c => [c.id, c]));
+            const servicesMap = new Map((await db.services.toArray()).map(s => [s.id, s]));
+            return orders.map(o => ({
+                ...o,
+                client_name: clientsMap.get(o.client_id)?.full_name || 'Desconocido',
+                service_name: servicesMap.get(o.service_id)?.name || 'Desconocido'
+            }));
         })
     },
 
@@ -167,18 +195,60 @@ window.api = {
     },
 
     reports: {
-        getDashboardStats: () => wrap(async () => {
-            const today = new Date().toISOString().split('T')[0];
+        _generateReportSummary: async (isDateInRange) => {
             const allOrders = await db.orders.toArray();
-            const todayOrders = allOrders.filter(o => o.received_date && o.received_date.startsWith(today));
-            const activeOrders = allOrders.filter(o => o.status !== 'delivered');
-            const deliveredToday = allOrders.filter(o => o.status === 'delivered' && o.delivered_date && o.delivered_date.startsWith(today));
+            let total_income = 0;
+            let unique_clients = new Set();
+            let dateMap = new Map();
+            let serviceMap = new Map();
             
-            const income = allOrders
-                .filter(o => o.status === 'delivered' && o.delivered_date && o.delivered_date.startsWith(today))
-                .reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0);
-                
+            const services = await db.services.toArray();
+            const servicesDict = Object.fromEntries(services.map(s => [s.id, s.name]));
+
             return {
+                total_income: totalIncome,
+                total_orders: totalOrders,
+                unique_clients: clientsSet.size,
+                income_by_date: Object.entries(incomeByDate).map(([date, total]) => ({ date, total })),
+                services_breakdown: Object.entries(servicesMap).map(([id, data]) => ({ service_name: servicesDict[id] || 'Desconocido', total_amount: data.revenue, order_count: data.count }))
+            };
+        },
+        getDashboardStats: () => wrap(async () => {
+            const today = getLocalString();
+            const allOrders = await db.orders.toArray();
+            
+            const todayOrders = allOrders.filter(o => o.received_date && getLocalString(o.received_date) === today);
+            const activeOrders = allOrders.filter(o => o.status !== 'delivered');
+            const deliveredToday = allOrders.filter(o => o.delivered_date && getLocalString(o.delivered_date) === today);
+            
+            let income = 0;
+            allOrders.forEach(o => {
+                const createdDate = o.created_at ? getLocalString(o.created_at) : '';
+                const updatedDate = o.updated_at ? getLocalString(o.updated_at) : (o.delivered_date ? getLocalString(o.delivered_date) : '');
+                
+                const finalAmount = parseFloat(o.final_amount) || 0;
+                const advance = parseFloat(o.advance_payment) || 0;
+
+                if (o.payment_status === 'paid') {
+                    if (createdDate === today && updatedDate === today) {
+                        income += finalAmount;
+                    } else if (createdDate === today) {
+                        income += advance;
+                    } else if (updatedDate === today) {
+                        income += finalAmount - advance;
+                    }
+                } else if (o.payment_status === 'partial' && createdDate === today) {
+                    income += advance;
+                } else if (!o.payment_status && o.status === 'delivered' && updatedDate === today) {
+                    income += finalAmount;
+                }
+            });
+
+            return {
+                today_clients: new Set(todayOrders.map(o => o.client_id)).size,
+                received: todayOrders.length,
+                in_progress: activeOrders.filter(o => o.status === 'in_progress').length,
+                ready: activeOrders.filter(o => o.status === 'ready').length,
                 today_orders: todayOrders.length,
                 active_orders: activeOrders.length,
                 today_income: income,
@@ -186,28 +256,43 @@ window.api = {
             };
         }),
         getDailySummary: (date) => wrap(async () => {
-            const allOrders = await db.orders.toArray();
-            const orders = allOrders.filter(o => o.received_date && o.received_date.startsWith(date));
-            const count = orders.length;
-            const income = orders.reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0);
-            return { date, count, income };
+            return await window.api.reports._generateReportSummary(d => d === date);
         }),
-        getIncomeByDateRange: (start, end) => wrap(async () => {
-            const allOrders = await db.orders.toArray();
-            const orders = allOrders.filter(o => {
-                if (!o.received_date) return false;
-                const d = o.received_date.split('T')[0];
-                return d >= start && d <= end;
-            });
-            const income = orders.reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0);
-            return { income, count: orders.length };
+        getWeeklySummary: (start, end) => wrap(async () => {
+            return await window.api.reports._generateReportSummary(d => d >= start && d <= end);
         }),
         getMonthlySummary: (year, month) => wrap(async () => {
             const prefix = `${year}-${String(month).padStart(2, '0')}`;
-            const allOrders = await db.orders.toArray();
-            const orders = allOrders.filter(o => o.received_date && o.received_date.startsWith(prefix));
-            const income = orders.reduce((sum, o) => sum + (Number(o.final_amount) || 0), 0);
-            return { month: prefix, count: orders.length, income };
+            return await window.api.reports._generateReportSummary(d => d.startsWith(prefix));
+        }),
+        getIncomeByDateRange: (start, end) => wrap(async () => {
+            return await window.api.reports._generateReportSummary(d => d >= start && d <= end);
+        }),
+        exportCSV: async (csvData, filename) => wrap(async () => {
+            try {
+                const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                return { success: true };
+            } catch (e) {
+                console.error('Export error', e);
+                throw new Error("No se pudo exportar el archivo");
+            }
+        }),
+        clearOld: () => wrap(async () => {
+            // Eliminar solo si están entregados y su pago está cancelado
+            const oldOrders = await db.orders.filter(o => o.status === 'delivered' && o.payment_status === 'paid').toArray();
+            if (oldOrders.length > 0) {
+                const ids = oldOrders.map(o => o.id);
+                await db.orders.bulkDelete(ids);
+            }
+            return { count: oldOrders.length };
         })
     },
 
@@ -229,9 +314,9 @@ window.api = {
                 if (!lic) throw new Error("Código de licencia inválido");
                 if (lic.status !== 'active') throw new Error("Esta licencia ha sido suspendida");
                 
-                // Si la licencia tiene otro device_id que no sea este o vacío, fallar (simplificado para offline web)
-                if (lic.activated_device && lic.activated_device !== "" && lic.activated_device !== deviceId) {
-                    throw new Error("La licencia ya está en uso en otro dispositivo");
+                // Seguridad Estricta: La licencia debe tener este deviceId específico.
+                if (!lic.activated_device || lic.activated_device !== deviceId) {
+                    throw new Error("Esta licencia no está asignada a este dispositivo. Comunícate con el administrador.");
                 }
                 
                 // Guardar en local
@@ -263,7 +348,8 @@ window.api = {
                     if (res.ok) {
                         const json = await res.json();
                         const onlineLic = json.licenses.find(l => l.code === lic.code);
-                        if (!onlineLic || onlineLic.status !== 'active') {
+                        const deviceId = localStorage.getItem('lavanderia_device_id');
+                        if (!onlineLic || onlineLic.status !== 'active' || onlineLic.activated_device !== deviceId) {
                             await db.license.update(1, { status: 'suspended' });
                             return { valid: false, reason: 'suspended' };
                         }

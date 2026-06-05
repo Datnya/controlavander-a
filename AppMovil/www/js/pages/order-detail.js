@@ -263,7 +263,8 @@ window.orderDetailPage = {
       '¿Confirmas que el cliente ha pagado el saldo restante?',
       async () => {
         try {
-          const updatedData = { ...this.data, payment_status: 'paid', advance_payment: 0 };
+          // Mantener advance_payment para cálculos de ingresos correctos
+          const updatedData = { ...this.data, payment_status: 'paid' };
           const res = await window.api.orders.update(this.orderId, updatedData);
           if (res.success) {
             toast.success('Pago Registrado', 'El pedido ha sido marcado como pagado.');

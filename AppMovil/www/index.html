@@ -102,7 +102,6 @@
           <img src="assets/logo-v2.png" alt="Logo" style="height: 68px; margin-right: 14px; object-fit: contain;">
           <div>
             <h2 class="header-title" id="pageTitle" style="margin-bottom: 2px; font-size: 18px; color: white;">Dashboard</h2>
-            <span class="text-sm font-medium" style="color: rgba(255,255,255,0.6);" id="currentDateDisplay">--/--/----</span>
           </div>
         </div>
         <div class="header-right">
@@ -140,18 +139,6 @@
   <script src="js/pages/settings.js"></script>
   <script src="js/pages/receipt.js"></script>
 
-  <!-- License check: redirect to activation if no license -->
-  <script>
-    (async function checkLicense() {
-      try {
-        const status = await window.api.license.getStatus();
-        if (!status.success || !status.data || !status.data.valid) {
-          window.location.href = 'activation.html';
-        }
-      } catch(e) {
-        window.location.href = 'activation.html';
-      }
-    })();
-  </script>
+
 </body>
 </html>

@@ -17,15 +17,15 @@ window.receiptPage = {
         </button>
       </div>
 
-      <div class="receipt-page">
-        <div class="receipt-preview-container">
-          <div class="receipt-paper" id="receiptNode">
+      <div class="receipt-page flex-col align-center" style="gap: 24px; padding: 10px 0;">
+        <div class="receipt-preview-container" style="width: 100%; display: flex; justify-content: center; overflow-x: auto;">
+          <div class="receipt-paper" id="receiptNode" style="margin: 0 auto;">
             <!-- Contenido del recibo cargado dinámicamente -->
             <div class="text-center"><div class="spinner mx-auto"></div> Cargando recibo...</div>
           </div>
         </div>
         
-        <div class="receipt-actions card" style="align-self: flex-start;">
+        <div class="receipt-actions card w-100" style="max-width: 400px; margin: 0 auto;">
           <h3 class="font-semibold text-md mb-4 pb-2 border-bottom">Acciones de Comprobante</h3>
           
           <button class="btn btn-primary w-100" onclick="receiptPage.copyAsImage()" id="btnCopyImg">
