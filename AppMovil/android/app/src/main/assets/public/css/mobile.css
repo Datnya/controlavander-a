@@ -1,0 +1,298 @@
+/* ==================== MOBILE OVERRIDES ==================== */
+
+/* Ocultar titlebar de escritorio */
+.titlebar {
+  display: none !important;
+}
+
+/* Layout principal: vertical en móvil */
+.app-layout {
+  flex-direction: column;
+  padding-top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar -> Bottom Tab Bar */
+.sidebar {
+  position: fixed;
+  top: auto;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 64px;
+  flex-direction: row;
+  z-index: 1000;
+  background: var(--color-gray-900);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0;
+  overflow: visible;
+}
+
+.sidebar-logo,
+.sidebar-section-title,
+.sidebar-divider,
+.sidebar-footer {
+  display: none !important;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 10px;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Nav items en barra inferior */
+.nav-item {
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  margin: 0;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  min-width: 80px;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+}
+
+.nav-item svg {
+  width: 26px;
+  height: 26px;
+}
+
+.nav-item.active {
+  background: transparent;
+  color: var(--color-primary-400);
+}
+
+.nav-item.active::before {
+  display: none;
+}
+
+.nav-item .nav-badge {
+  position: absolute;
+  top: 2px;
+  right: 50%;
+  margin-right: -18px;
+  margin-left: 0;
+  min-width: 16px;
+  height: 16px;
+  font-size: 9px;
+  padding: 0 4px;
+}
+
+/* Main Content: ocupa todo el espacio */
+.main-content {
+  margin-left: 0;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 100vw;
+  padding-bottom: 64px; /* espacio para la barra de navegación */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Header adaptado */
+.header {
+  height: auto;
+  min-height: 60px;
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.header-title {
+  font-size: 16px;
+}
+
+.header-right {
+  gap: 8px;
+}
+
+.header-right .btn {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.header-right .text-sm {
+  font-size: 11px;
+}
+
+/* Page Content */
+.page-content {
+  padding: 16px;
+}
+
+/* Grids responsivos */
+.grid-2, .grid-3, .grid-4, .grid-5 {
+  grid-template-columns: 1fr !important;
+}
+
+/* Solo aplicar columnas múltiples en pantallas realmente grandes (tablets) para evitar desborde */
+@media (min-width: 768px) {
+  .grid-2, .grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Stat cards en móvil */
+.stat-card {
+  padding: 14px;
+}
+
+.stat-card .stat-value {
+  font-size: 22px;
+}
+
+/* Tablas con scroll horizontal */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrapper table {
+  min-width: 500px;
+}
+
+/* Filtros en columna */
+.filters-bar {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filter-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.filter-input {
+  flex: 1;
+  width: 100%;
+}
+
+.filters-divider {
+  width: 100%;
+  height: 1px;
+}
+
+/* Botones más grandes para toque */
+.btn {
+  min-height: 42px;
+  padding: 10px 16px;
+}
+
+.btn-sm {
+  min-height: 36px;
+  padding: 8px 12px;
+}
+
+/* Modal responsivo */
+.modal-content {
+  width: 95% !important;
+  max-width: 95% !important;
+  max-height: 85vh;
+  margin: auto;
+}
+
+/* Form elements más grandes para toque */
+.form-input, .form-select, .form-textarea {
+  min-height: 44px;
+  font-size: 16px; /* Previene zoom en iOS */
+}
+
+/* Activation page responsive */
+.activation-page {
+  padding: 20px;
+}
+
+.activation-card {
+  padding: 24px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.activation-logo {
+  max-width: 120px;
+}
+
+.activation-input {
+  font-size: 16px;
+  min-height: 48px;
+}
+
+/* Page title y subtitulo */
+.page-title {
+  font-size: 18px;
+}
+
+.page-subtitle {
+  font-size: 12px;
+}
+
+/* Flex helpers para layout en dos columnas */
+.detail-grid {
+  grid-template-columns: 1fr !important;
+}
+
+/* Status bar area segura */
+body {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+.sidebar {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Forzar columna en nuevo pedido */
+.order-form-container {
+  display: flex !important;
+  flex-direction: column !important;
+}
+.order-form-main {
+  order: 1;
+}
+.order-summary-card {
+  order: 2;
+  margin-top: 16px;
+}
+
+/* Escalas de interfaz (Tamaño de Letras) */
+html.scale-large {
+  font-size: 18px; /* Incrementa rem base de 16px a 18px */
+}
+
+html.scale-xlarge {
+  font-size: 21px; /* Incrementa rem base de 16px a 21px */
+}
+
+html.scale-large .nav-item { font-size: 13px; min-width: 90px; }
+html.scale-large .nav-item svg { width: 30px; height: 30px; }
+html.scale-large .sidebar { height: 74px; }
+html.scale-large .main-content { padding-bottom: 74px; }
+
+html.scale-xlarge .nav-item { font-size: 14px; min-width: 100px; }
+html.scale-xlarge .nav-item svg { width: 34px; height: 34px; }
+html.scale-xlarge .sidebar { height: 84px; }
+html.scale-xlarge .main-content { padding-bottom: 84px; }
