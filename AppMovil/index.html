@@ -139,18 +139,6 @@
   <script src="js/pages/settings.js"></script>
   <script src="js/pages/receipt.js"></script>
 
-  <!-- License check: redirect to activation if no license -->
-  <script>
-    (async function checkLicense() {
-      try {
-        const status = await window.api.license.getStatus();
-        if (!status.success || !status.data || !status.data.valid) {
-          window.location.href = 'activation.html';
-        }
-      } catch(e) {
-        window.location.href = 'activation.html';
-      }
-    })();
-  </script>
+
 </body>
 </html>

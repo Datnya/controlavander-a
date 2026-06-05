@@ -211,7 +211,7 @@ window.clientsPage = {
   deleteClient(id, name) {
     modal.confirm(
       'Eliminar Cliente',
-      `¿Está seguro que desea eliminar a <b>${name}</b>?<br><br>Nota: Si el cliente tiene pedidos registrados, no podrá ser eliminado por integridad de datos.`,
+      `¿Está seguro que desea eliminar a <b>${name.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</b>?<br><br>Nota: Si el cliente tiene pedidos registrados, no podrá ser eliminado por integridad de datos.`,
       async () => {
         const res = await window.api.clients.delete(id);
         if (res.success) {

@@ -199,8 +199,10 @@ window.newOrderPage = {
         if (res.success && res.data.length > 0) {
           let html = '';
           res.data.slice(0, 5).forEach(c => {
+            const safeName = c.full_name ? c.full_name.replace(/'/g, "\\'") : '';
+            const safePhone = c.phone ? c.phone.replace(/'/g, "\\'") : '';
             html += `
-              <div class="autocomplete-item" onclick="newOrderPage.selectClient(${c.id}, '${c.full_name}', '${c.phone || ''}')">
+              <div class="autocomplete-item" onclick="newOrderPage.selectClient(${c.id}, '${safeName}', '${safePhone}')">
                 <span class="font-medium">${c.full_name}</span>
                 <span class="client-phone">${c.phone || c.document_id || ''}</span>
               </div>

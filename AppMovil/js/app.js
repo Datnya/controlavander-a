@@ -178,6 +178,16 @@ const app = {
 };
 
 // Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const status = await window.api.license.getStatus();
+    if (!status.success || !status.data || !status.data.valid) {
+      window.location.href = 'activation.html';
+      return;
+    }
+  } catch(e) {
+    window.location.href = 'activation.html';
+    return;
+  }
   app.init();
 });

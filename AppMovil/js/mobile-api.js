@@ -30,6 +30,11 @@ db.on('populate', () => {
 
 // Utilidad para obtener fechas
 const getNow = () => new Date().toISOString();
+const getLocalString = (dateString) => {
+    const d = dateString ? new Date(dateString) : new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split('T')[0];
+};
 
 // Wrapper para simular el comportamiento de IPC (async y retorna {success, data} o {success, error})
 const wrap = async (fn) => {
@@ -86,6 +91,14 @@ window.api = {
                 orders = orders.filter(o => o.payment_status === 'pending' || o.payment_status === 'partial' || !o.payment_status);
             }
 
+            if (filters.dateFrom && filters.dateTo) {
+                orders = orders.filter(o => {
+                    if (!o.received_date) return false;
+                    const d = o.received_date.split('T')[0];
+                    return d >= filters.dateFrom && d <= filters.dateTo;
+                });
+            }
+
             if (filters.search) {
                 const q = filters.search.toLowerCase();
                 orders = orders.filter(o => 
@@ -98,8 +111,12 @@ window.api = {
         getById: (id) => wrap(async () => {
             const order = await db.orders.get(id);
             if (!order) throw new Error("Order not found");
-            order.client = await db.clients.get(order.client_id);
-            order.service = await db.services.get(order.service_id);
+            const client = await db.clients.get(order.client_id);
+            const service = await db.services.get(order.service_id);
+            order.client_name = client ? client.full_name : 'Desconocido';
+            order.client_phone = client ? client.phone : '';
+            order.client_doc = client ? client.document_id : '';
+            order.service_name = service ? service.name : 'Desconocido';
             return order;
         }),
         create: (data) => wrap(async () => {
@@ -129,12 +146,13 @@ window.api = {
             return orders.map(o => ({
                 ...o,
                 client_name: clientsMap.get(o.client_id)?.full_name || 'Desconocido',
+                client_phone: clientsMap.get(o.client_id)?.phone || '',
                 service_name: servicesMap.get(o.service_id)?.name || 'Desconocido'
             }));
         }),
         getToday: () => wrap(async () => {
-            const today = new Date().toISOString().split('T')[0];
-            const orders = await db.orders.filter(o => o.received_date && o.received_date.startsWith(today)).toArray();
+            const today = getLocalString();
+            const orders = await db.orders.filter(o => o.received_date && getLocalString(o.received_date) === today).toArray();
             const clientsMap = new Map((await db.clients.toArray()).map(c => [c.id, c]));
             const servicesMap = new Map((await db.services.toArray()).map(s => [s.id, s]));
             return orders.map(o => ({
@@ -187,95 +205,50 @@ window.api = {
             const services = await db.services.toArray();
             const servicesDict = Object.fromEntries(services.map(s => [s.id, s.name]));
 
-            let total_orders = 0;
-
-            allOrders.forEach(o => {
-                const createdDate = o.received_date ? o.received_date.split('T')[0] : '';
-                const updatedDate = o.updated_at ? o.updated_at.split('T')[0] : createdDate;
-                
-                let incomeToday = 0;
-                let incDate = null;
-                
-                if (createdDate && isDateInRange(createdDate)) {
-                    total_orders += 1;
-                    unique_clients.add(o.client_id);
-                    
-                    if (!dateMap.has(createdDate)) dateMap.set(createdDate, { date: createdDate, total: 0, total_orders: 0 });
-                    dateMap.get(createdDate).total_orders += 1;
-
-                    const svcName = servicesDict[o.service_id] || 'Desconocido';
-                    if (!serviceMap.has(svcName)) serviceMap.set(svcName, { service_name: svcName, total_amount: 0, order_count: 0 });
-                    serviceMap.get(svcName).order_count += 1;
-                    
-                    if (o.payment_status === 'paid') {
-                        incomeToday = Number(o.final_amount) || 0;
-                    } else if (o.payment_status === 'partial') {
-                        incomeToday = Number(o.advance_payment) || 0;
-                    } else if (o.status === 'delivered' && o.delivered_date && o.delivered_date.startsWith(createdDate)) {
-                        incomeToday = Number(o.final_amount) || 0;
-                    }
-                    incDate = createdDate;
-                }
-                
-                if (updatedDate && isDateInRange(updatedDate) && createdDate !== updatedDate && o.payment_status === 'paid') {
-                    incomeToday = Math.max(0, (Number(o.final_amount) || 0) - (Number(o.advance_payment) || 0));
-                    incDate = updatedDate;
-                }
-
-                if (!o.payment_status && o.status === 'delivered' && o.delivered_date) {
-                    const delDate = o.delivered_date.split('T')[0];
-                    if (isDateInRange(delDate) && createdDate !== delDate) {
-                        incomeToday = Number(o.final_amount) || 0;
-                        incDate = delDate;
-                    }
-                }
-
-                if (incomeToday > 0 && incDate) {
-                    total_income += incomeToday;
-                    if (!dateMap.has(incDate)) dateMap.set(incDate, { date: incDate, total: 0, total_orders: 0 });
-                    dateMap.get(incDate).total += incomeToday;
-                    
-                    const svcName = servicesDict[o.service_id] || 'Desconocido';
-                    if (!serviceMap.has(svcName)) serviceMap.set(svcName, { service_name: svcName, total_amount: 0, order_count: 0 });
-                    serviceMap.get(svcName).total_amount += incomeToday;
-                }
-            });
-
             return {
-                total_income,
-                total_orders,
-                unique_clients: unique_clients.size,
-                income_by_date: Array.from(dateMap.values()).sort((a,b) => a.date.localeCompare(b.date)),
-                services_breakdown: Array.from(serviceMap.values()).sort((a,b) => b.total_amount - a.total_amount)
+                total_income: totalIncome,
+                total_orders: totalOrders,
+                unique_clients: clientsSet.size,
+                income_by_date: Object.entries(incomeByDate).map(([date, total]) => ({ date, total })),
+                services_breakdown: Object.entries(servicesMap).map(([id, data]) => ({ service_name: servicesDict[id] || 'Desconocido', total_amount: data.revenue, order_count: data.count }))
             };
         },
         getDashboardStats: () => wrap(async () => {
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalString();
             const allOrders = await db.orders.toArray();
-            const todayOrders = allOrders.filter(o => o.received_date && o.received_date.startsWith(today));
+            
+            const todayOrders = allOrders.filter(o => o.received_date && getLocalString(o.received_date) === today);
             const activeOrders = allOrders.filter(o => o.status !== 'delivered');
-            const deliveredToday = allOrders.filter(o => o.status === 'delivered' && o.delivered_date && o.delivered_date.startsWith(today));
+            const deliveredToday = allOrders.filter(o => o.delivered_date && getLocalString(o.delivered_date) === today);
             
             let income = 0;
             allOrders.forEach(o => {
-                const createdDate = o.received_date ? o.received_date.split('T')[0] : '';
-                const updatedDate = o.updated_at ? o.updated_at.split('T')[0] : createdDate;
-                if (createdDate === today) {
-                    if (o.payment_status === 'paid') income += (Number(o.final_amount) || 0);
-                    else if (o.payment_status === 'partial') income += (Number(o.advance_payment) || 0);
-                    else if (o.status === 'delivered' && o.delivered_date && o.delivered_date.startsWith(today)) income += (Number(o.final_amount) || 0);
-                } else if (updatedDate === today && o.payment_status === 'paid') {
-                    income += Math.max(0, (Number(o.final_amount) || 0) - (Number(o.advance_payment) || 0));
-                } else if (!o.payment_status && o.status === 'delivered' && o.delivered_date && o.delivered_date.startsWith(today)) {
-                    income += Number(o.final_amount) || 0;
+                const createdDate = o.created_at ? getLocalString(o.created_at) : '';
+                const updatedDate = o.updated_at ? getLocalString(o.updated_at) : (o.delivered_date ? getLocalString(o.delivered_date) : '');
+                
+                const finalAmount = parseFloat(o.final_amount) || 0;
+                const advance = parseFloat(o.advance_payment) || 0;
+
+                if (o.payment_status === 'paid') {
+                    if (createdDate === today && updatedDate === today) {
+                        income += finalAmount;
+                    } else if (createdDate === today) {
+                        income += advance;
+                    } else if (updatedDate === today) {
+                        income += finalAmount - advance;
+                    }
+                } else if (o.payment_status === 'partial' && createdDate === today) {
+                    income += advance;
+                } else if (!o.payment_status && o.status === 'delivered' && updatedDate === today) {
+                    income += finalAmount;
                 }
             });
-                
+
             return {
                 today_clients: new Set(todayOrders.map(o => o.client_id)).size,
                 received: todayOrders.length,
-                in_progress: todayOrders.filter(o => o.status === 'in_progress').length,
-                ready: allOrders.filter(o => o.status === 'ready').length,
+                in_progress: activeOrders.filter(o => o.status === 'in_progress').length,
+                ready: activeOrders.filter(o => o.status === 'ready').length,
                 today_orders: todayOrders.length,
                 active_orders: activeOrders.length,
                 today_income: income,
@@ -296,9 +269,21 @@ window.api = {
             return await window.api.reports._generateReportSummary(d => d >= start && d <= end);
         }),
         exportCSV: async (csvData, filename) => wrap(async () => {
-            // Simulando la exportación, en Electron real enviaría a main process
-            console.log('Exporting CSV:', filename);
-            return { success: true };
+            try {
+                const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                return { success: true };
+            } catch (e) {
+                console.error('Export error', e);
+                throw new Error("No se pudo exportar el archivo");
+            }
         }),
         clearOld: () => wrap(async () => {
             // Eliminar solo si están entregados y su pago está cancelado
@@ -363,7 +348,8 @@ window.api = {
                     if (res.ok) {
                         const json = await res.json();
                         const onlineLic = json.licenses.find(l => l.code === lic.code);
-                        if (!onlineLic || onlineLic.status !== 'active') {
+                        const deviceId = localStorage.getItem('lavanderia_device_id');
+                        if (!onlineLic || onlineLic.status !== 'active' || onlineLic.activated_device !== deviceId) {
                             await db.license.update(1, { status: 'suspended' });
                             return { valid: false, reason: 'suspended' };
                         }
