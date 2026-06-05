@@ -1,6 +1,12 @@
 {
   "licenses": [
     {
+      "code": "CLIENTE1-2024",
+      "client_name": "CLIENTE NRO 1",
+      "activated_device": "AQUI_VA_EL_ID_DEL_CLIENTE",
+      "status": "active"
+    },
+    {
       "code": "TEST-1234-ABCD",
       "client_name": "Cliente de Prueba",
       "activated_device": "",

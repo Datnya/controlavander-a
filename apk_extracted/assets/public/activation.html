@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Activar Licencia — Control de Lavandería</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <link rel="stylesheet" href="css/mobile.css">
+  <script src="./js/dexie.js"></script>
+  <script src="./js/mobile-api.js"></script>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0c1929 0%, #1a365d 50%, #0e4a8a 100%);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .activation-card {
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    .activation-logo {
+      max-width: 100px;
+      height: auto;
+      margin-bottom: 20px;
+    }
+    .activation-title {
+      color: white;
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .activation-subtitle {
+      color: rgba(255,255,255,0.6);
+      font-size: 14px;
+      margin: 0 0 24px;
+    }
+    .activation-input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 16px;
+      border: 2px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.08);
+      color: white;
+      outline: none;
+      margin-bottom: 16px;
+      box-sizing: border-box;
+      text-align: center;
+      letter-spacing: 2px;
+      font-weight: 600;
+    }
+    .activation-input::placeholder {
+      color: rgba(255,255,255,0.3);
+      letter-spacing: normal;
+      font-weight: 400;
+    }
+    .activation-input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56,189,248,0.2);
+    }
+    .activation-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #0ea5e9, #2563eb);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .activation-btn:disabled {
+      opacity: 0.5;
+    }
+    .activation-loading {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+    }
+    .activation-loading.show { display: flex; }
+    .activation-error {
+      display: none;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #fca5a5;
+      font-size: 13px;
+    }
+    .activation-error.show { display: block; }
+    .spinner-sm {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="activation-card">
+    <img src="assets/logo-v2.png" alt="Logo" class="activation-logo" onerror="this.style.display='none'">
+    <h1 class="activation-title">Bienvenido</h1>
+    <p class="activation-subtitle">Ingrese su código de licencia para activar la aplicación</p>
+    
+    <input type="text" id="licenseCode" class="activation-input" placeholder="Ingrese su código" maxlength="50" autocomplete="off" autofocus>
+    
+    <button id="activateBtn" class="activation-btn" onclick="activateLicense()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+      Activar Licencia
+    </button>
+
+    <div id="loadingIndicator" class="activation-loading">
+      <div class="spinner-sm"></div>
+      <span>Verificando licencia...</span>
+    </div>
+
+    <div id="errorMessage" class="activation-error"></div>
+  </div>
+
+  <script>
+    // Primero verificar si ya hay licencia activa
+    (async function() {
+      try {
+        const status = await window.api.license.getStatus();
+        if (status.success && status.data && status.data.valid) {
+          window.location.href = 'index.html';
+          return;
+        }
+      } catch(e) {}
+    })();
+
+    const codeInput = document.getElementById('licenseCode');
+    const activateBtn = document.getElementById('activateBtn');
+    const loadingEl = document.getElementById('loadingIndicator');
+    const errorEl = document.getElementById('errorMessage');
+
+    codeInput.addEventListener('input', (e) => {
+      e.target.value = e.target.value.toUpperCase();
+    });
+
+    codeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') activateLicense();
+    });
+
+    async function activateLicense() {
+      const code = codeInput.value.trim();
+      if (!code) {
+        showError('Por favor, ingrese un código de licencia');
+        return;
+      }
+
+      activateBtn.disabled = true;
+      loadingEl.classList.add('show');
+      errorEl.classList.remove('show');
+
+      try {
+        const result = await window.api.license.activate(code);
+        
+        if (result && result.success) {
+          window.location.href = 'index.html';
+        } else {
+          showError((result && result.error) || 'No se pudo activar la licencia');
+        }
+      } catch (err) {
+        showError('Error de conexión. Verifique su internet e intente nuevamente.');
+      } finally {
+        activateBtn.disabled = false;
+        loadingEl.classList.remove('show');
+      }
+    }
+
+    function showError(message) {
+      errorEl.textContent = message;
+      errorEl.classList.add('show');
+    }
+  </script>
+</body>
+</html>
