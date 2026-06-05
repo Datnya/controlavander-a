@@ -55,15 +55,16 @@ window.receiptPage = {
 
   async init(params) {
     if (!this.orderId) return;
-    
-    // Cargar la librería html2canvas si no está cargada
+
+    // El recibo se muestra siempre, sin depender de librerías externas (funciona sin internet).
+    await this.loadData();
+
+    // html2canvas se carga en segundo plano solo para "Copiar como Imagen".
     if (typeof html2canvas === 'undefined') {
       const script = document.createElement('script');
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-      script.onload = () => this.loadData();
+      script.onerror = () => console.warn('html2canvas no disponible (sin conexión). El recibo se muestra igual; "Copiar como Imagen" no estará disponible hasta tener internet.');
       document.head.appendChild(script);
-    } else {
-      await this.loadData();
     }
   },
 
@@ -88,27 +89,29 @@ window.receiptPage = {
     
     const container = document.getElementById('receiptNode');
     
+    const esc = (v) => format.escapeHtml(v);
+
     // Preparar info
-    const bizName = settings.business_name || 'Control de Lavandería';
-    const bizPhone = settings.business_phone ? `Tel: ${settings.business_phone}` : '';
-    const bizAddress = settings.business_address || '';
-    
-    const clientName = order.client_name;
-    const clientPhone = order.client_phone || '';
-    
+    const bizName = esc(settings.business_name || 'Control de Lavandería');
+    const bizPhone = settings.business_phone ? `Tel: ${esc(settings.business_phone)}` : '';
+    const bizAddress = esc(settings.business_address || '');
+
+    const clientName = esc(order.client_name);
+    const clientPhone = esc(order.client_phone || '');
+
     let serviceDetail = '';
     if (order.weight_kg > 0) serviceDetail += `${order.weight_kg} Kg`;
     if (order.weight_kg > 0 && order.garment_count > 0) serviceDetail += ' / ';
     if (order.garment_count > 0) serviceDetail += `${order.garment_count} pzas`;
 
-    html = `
+    const html = `
       <div class="receipt-header-section">
         <div class="receipt-business-name">${bizName}</div>
         <div class="receipt-business-info">
           ${bizAddress ? `<div>${bizAddress}</div>` : ''}
           ${bizPhone ? `<div>${bizPhone}</div>` : ''}
         </div>
-        <div class="receipt-order-number">TICKET: ${order.order_number}</div>
+        <div class="receipt-order-number">TICKET: ${esc(order.order_number)}</div>
       </div>
 
       <div class="receipt-row">
@@ -141,7 +144,7 @@ window.receiptPage = {
       
       <div class="receipt-row">
         <span class="receipt-label" style="text-align: left;">
-          ${order.service_name}<br>
+          ${esc(order.service_name)}<br>
           <span style="font-size: 11px;">${serviceDetail}</span>
         </span>
         <span class="receipt-value">${format.currency(order.base_amount)}</span>
@@ -166,8 +169,8 @@ window.receiptPage = {
       </div>
       
       <div class="receipt-footer-section">
-        ${settings.receipt_message ? `<div style="font-weight: bold; margin-bottom: 8px;">${settings.receipt_message}</div>` : ''}
-        ${settings.receipt_footer ? `<div class="receipt-footer-message">${settings.receipt_footer.replace(/\n/g, '<br>')}</div>` : ''}
+        ${settings.receipt_message ? `<div style="font-weight: bold; margin-bottom: 8px;">${esc(settings.receipt_message)}</div>` : ''}
+        ${settings.receipt_footer ? `<div class="receipt-footer-message">${esc(settings.receipt_footer).replace(/\n/g, '<br>')}</div>` : ''}
       </div>
     `;
 

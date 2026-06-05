@@ -411,7 +411,11 @@ function getBulkSettings(keys) {
 // ==================== REPORTES ====================
 
 function getDashboardStats() {
-  const today = new Date().toISOString().split('T')[0];
+  // Fecha local del dispositivo (no UTC), consistente con received_date que se
+  // guarda con datetime('now','localtime'). Evita que tras las 19:00 (UTC-5) el
+  // dashboard cambie de día y muestre cifras incorrectas.
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const todayReceived = db.prepare(`
     SELECT COUNT(*) as count FROM orders WHERE DATE(received_date) = ? AND status = 'received'

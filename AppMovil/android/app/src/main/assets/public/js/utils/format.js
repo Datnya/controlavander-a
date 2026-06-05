@@ -1,5 +1,21 @@
 const format = {
   /**
+   * Escapa texto para insertarlo de forma segura en HTML (previene XSS y
+   * evita que comillas/símbolos rompan el marcado o los atributos).
+   * @param {*} value Valor a escapar
+   * @returns {string}
+   */
+  escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  },
+
+  /**
    * Formatea un número como moneda (Soles)
    * @param {number} amount Monto a formatear
    * @returns {string} Ej: S/ 120.50

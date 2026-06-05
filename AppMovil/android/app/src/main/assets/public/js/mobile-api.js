@@ -197,20 +197,51 @@ window.api = {
     reports: {
         _generateReportSummary: async (isDateInRange) => {
             const allOrders = await db.orders.toArray();
-            let total_income = 0;
-            let unique_clients = new Set();
-            let dateMap = new Map();
-            let serviceMap = new Map();
-            
             const services = await db.services.toArray();
             const servicesDict = Object.fromEntries(services.map(s => [s.id, s.name]));
 
+            // Ingreso reconocido por pedido: pagado -> total; parcial -> adelanto; pendiente -> 0
+            const incomeOf = (o) => {
+                if (o.payment_status === 'paid') return parseFloat(o.final_amount) || 0;
+                if (o.payment_status === 'partial') return parseFloat(o.advance_payment) || 0;
+                return 0;
+            };
+
+            let total_income = 0;
+            let total_orders = 0;
+            const clientsSet = new Set();
+            const incomeByDate = {};   // fecha -> { total, total_orders }
+            const serviceMap = {};     // service_id -> { revenue, count }
+
+            allOrders.forEach(o => {
+                if (!o.received_date) return;
+                const date = getLocalString(o.received_date);
+                if (!isDateInRange(date)) return;
+
+                const income = incomeOf(o);
+                total_income += income;
+                total_orders += 1;
+                if (o.client_id != null) clientsSet.add(o.client_id);
+
+                if (!incomeByDate[date]) incomeByDate[date] = { total: 0, total_orders: 0 };
+                incomeByDate[date].total += income;
+                incomeByDate[date].total_orders += 1;
+
+                if (!serviceMap[o.service_id]) serviceMap[o.service_id] = { revenue: 0, count: 0 };
+                serviceMap[o.service_id].revenue += income;
+                serviceMap[o.service_id].count += 1;
+            });
+
             return {
-                total_income: totalIncome,
-                total_orders: totalOrders,
+                total_income,
+                total_orders,
                 unique_clients: clientsSet.size,
-                income_by_date: Object.entries(incomeByDate).map(([date, total]) => ({ date, total })),
-                services_breakdown: Object.entries(servicesMap).map(([id, data]) => ({ service_name: servicesDict[id] || 'Desconocido', total_amount: data.revenue, order_count: data.count }))
+                income_by_date: Object.entries(incomeByDate)
+                    .map(([date, v]) => ({ date, total: v.total, total_orders: v.total_orders }))
+                    .sort((a, b) => a.date.localeCompare(b.date)),
+                services_breakdown: Object.entries(serviceMap)
+                    .map(([id, v]) => ({ service_name: servicesDict[id] || 'Desconocido', total_amount: v.revenue, order_count: v.count }))
+                    .sort((a, b) => b.total_amount - a.total_amount)
             };
         },
         getDashboardStats: () => wrap(async () => {

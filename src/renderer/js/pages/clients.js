@@ -92,10 +92,10 @@ window.clientsPage = {
       html += `
         <tr>
           <td class="font-medium text-gray-800">
-            ${client.full_name}
+            ${format.escapeHtml(client.full_name)}
           </td>
-          <td>${client.phone || '-'}</td>
-          <td>${client.document_id || '-'}</td>
+          <td>${format.escapeHtml(client.phone) || '-'}</td>
+          <td>${format.escapeHtml(client.document_id) || '-'}</td>
           <td>
             ${isFrequent 
               ? `<span class="client-frequent-star"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>` 
@@ -107,7 +107,7 @@ window.clientsPage = {
               <button class="btn btn-icon btn-sm btn-ghost" title="Editar" onclick="clientsPage.openClientModal(${client.id})">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
               </button>
-              <button class="btn btn-icon btn-sm btn-ghost text-danger" title="Eliminar" onclick="clientsPage.deleteClient(${client.id}, '${client.full_name}')">
+              <button class="btn btn-icon btn-sm btn-ghost text-danger" title="Eliminar" onclick="clientsPage.deleteClient(${client.id})">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
               </button>
             </div>
@@ -135,23 +135,23 @@ window.clientsPage = {
       <form id="clientForm" class="flex-col gap-4">
         <div class="form-group mb-0">
           <label class="form-label">Nombre Completo <span class="text-danger">*</span></label>
-          <input type="text" id="clientName" class="form-input" required value="${client ? client.full_name : ''}">
+          <input type="text" id="clientName" class="form-input" required value="${client ? format.escapeHtml(client.full_name) : ''}">
         </div>
         
         <div class="form-row">
           <div class="form-group mb-0">
             <label class="form-label">Teléfono</label>
-            <input type="tel" id="clientPhone" class="form-input" value="${client && client.phone ? client.phone : ''}">
+            <input type="tel" id="clientPhone" class="form-input" value="${client && client.phone ? format.escapeHtml(client.phone) : ''}">
           </div>
           <div class="form-group mb-0">
             <label class="form-label">Documento (DNI/RUC)</label>
-            <input type="text" id="clientDoc" class="form-input" value="${client && client.document_id ? client.document_id : ''}">
+            <input type="text" id="clientDoc" class="form-input" value="${client && client.document_id ? format.escapeHtml(client.document_id) : ''}">
           </div>
         </div>
 
         <div class="form-group mb-0">
           <label class="form-label">Notas</label>
-          <textarea id="clientNotes" class="form-textarea" style="min-height: 80px;">${client && client.notes ? client.notes : ''}</textarea>
+          <textarea id="clientNotes" class="form-textarea" style="min-height: 80px;">${client && client.notes ? format.escapeHtml(client.notes) : ''}</textarea>
         </div>
 
         <div class="flex-align gap-3 mt-2">
@@ -207,10 +207,12 @@ window.clientsPage = {
     });
   },
 
-  deleteClient(id, name) {
+  deleteClient(id) {
+    const client = this.data.find(c => c.id === id);
+    const name = client ? client.full_name : 'este cliente';
     modal.confirm(
       'Eliminar Cliente',
-      `¿Está seguro que desea eliminar a <b>${name}</b>?<br><br>Nota: Si el cliente tiene pedidos registrados, no podrá ser eliminado por integridad de datos.`,
+      `¿Está seguro que desea eliminar a <b>${format.escapeHtml(name)}</b>?<br><br>Nota: Si el cliente tiene pedidos registrados, no podrá ser eliminado por integridad de datos.`,
       async () => {
         const res = await window.api.clients.delete(id);
         if (res.success) {

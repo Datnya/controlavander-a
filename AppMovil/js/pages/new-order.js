@@ -1,5 +1,6 @@
 window.newOrderPage = {
   services: [],
+  searchResults: [],
   selectedClient: null,
   selectedService: null,
   
@@ -197,14 +198,13 @@ window.newOrderPage = {
       searchTimer = setTimeout(async () => {
         const res = await window.api.clients.search(query);
         if (res.success && res.data.length > 0) {
+          this.searchResults = res.data.slice(0, 5);
           let html = '';
-          res.data.slice(0, 5).forEach(c => {
-            const safeName = c.full_name ? c.full_name.replace(/'/g, "\\'") : '';
-            const safePhone = c.phone ? c.phone.replace(/'/g, "\\'") : '';
+          this.searchResults.forEach(c => {
             html += `
-              <div class="autocomplete-item" onclick="newOrderPage.selectClient(${c.id}, '${safeName}', '${safePhone}')">
-                <span class="font-medium">${c.full_name}</span>
-                <span class="client-phone">${c.phone || c.document_id || ''}</span>
+              <div class="autocomplete-item" onclick="newOrderPage.selectClient(${c.id})">
+                <span class="font-medium">${format.escapeHtml(c.full_name)}</span>
+                <span class="client-phone">${format.escapeHtml(c.phone || c.document_id || '')}</span>
               </div>
             `;
           });
@@ -292,18 +292,20 @@ window.newOrderPage = {
     document.getElementById('saveOrderBtn').addEventListener('click', () => this.saveOrder());
   },
 
-  selectClient(id, name, phone) {
+  selectClient(id) {
+    const client = (this.searchResults || []).find(c => c.id === id);
     this.selectedClient = id;
-    
+
     document.getElementById('orderClientSearch').value = '';
     document.getElementById('clientAutocompleteResults').classList.remove('show');
     document.querySelector('.client-autocomplete').style.display = 'none';
-    
+
     const card = document.getElementById('selectedClientCard');
-    document.getElementById('selectedClientName').textContent = name;
-    document.getElementById('selectedClientPhone').textContent = phone || 'Sin teléfono';
+    // textContent evita cualquier inyección; los nombres con comillas ya no rompen nada.
+    document.getElementById('selectedClientName').textContent = client ? client.full_name : '';
+    document.getElementById('selectedClientPhone').textContent = (client && client.phone) ? client.phone : 'Sin teléfono';
     card.style.display = 'block';
-    
+
     this.validateForm();
   },
 

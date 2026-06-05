@@ -187,7 +187,7 @@ window.orderDetailPage = {
 
     document.getElementById('detailClientName').textContent = d.client_name;
     document.getElementById('detailClientPhone').textContent = d.client_phone || '-';
-    document.getElementById('detailClientDoc').textContent = d.client_doc || '-';
+    document.getElementById('detailClientDoc').textContent = d.client_document || '-';
 
     document.getElementById('detailReceivedDate').textContent = format.datetime(d.received_date);
     document.getElementById('detailEstimatedDate').textContent = format.date(d.estimated_delivery);
