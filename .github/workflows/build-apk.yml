@@ -32,6 +32,13 @@ jobs:
       working-directory: ./AppMovil
       run: npm install
 
+    # cap sync regenera los proyectos generados que estan en .gitignore
+    # (capacitor-cordova-android-plugins, capacitor.settings.gradle, etc.) y
+    # copia la carpeta web (www) hacia los assets nativos de Android.
+    - name: Sync Capacitor (Android)
+      working-directory: ./AppMovil
+      run: npx cap sync android
+
     - name: Grant execute permission for gradlew
       working-directory: ./AppMovil/android
       run: chmod +x gradlew
