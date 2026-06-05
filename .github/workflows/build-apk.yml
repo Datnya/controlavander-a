@@ -22,7 +22,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22'
 
     # Capacitor enlaza los modulos nativos de Android desde node_modules
     # (ver AppMovil/android/capacitor.settings.gradle). Sin este paso Gradle
