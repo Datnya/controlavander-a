@@ -19,7 +19,18 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
 
+    # Capacitor enlaza los modulos nativos de Android desde node_modules
+    # (ver AppMovil/android/capacitor.settings.gradle). Sin este paso Gradle
+    # falla con "Configuring project ':capacitor-android' without an existing
+    # directory". node_modules esta en .gitignore, asi que hay que instalarlo.
+    - name: Install npm dependencies (Capacitor)
+      working-directory: ./AppMovil
+      run: npm install
 
     - name: Grant execute permission for gradlew
       working-directory: ./AppMovil/android
