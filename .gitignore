@@ -8,3 +8,5 @@ control-lavanderia.db-wal
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+/pcl.txt
+joblog*.txt
