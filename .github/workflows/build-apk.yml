@@ -36,6 +36,17 @@ jobs:
       working-directory: ./AppMovil
       run: npm install
 
+    # Marca la version del bundle en el codigo web ANTES de cap sync, para que
+    # tanto el APK (bundle de fabrica) como el bundle OTA lleven la misma version.
+    # updater.js compara esta version contra el manifiesto para decidir si baja
+    # una actualizacion.
+    - name: Inyectar version del bundle (OTA)
+      working-directory: ./AppMovil
+      run: |
+        echo "window.__APP_BUNDLE_VERSION__ = '1.0.${{ github.run_number }}';" > www/js/version.js
+        cp www/js/version.js js/version.js
+        echo "version.js =>" && cat www/js/version.js
+
     # cap sync regenera los proyectos generados que estan en .gitignore
     # (capacitor-cordova-android-plugins, capacitor.settings.gradle, etc.) y
     # copia la carpeta web (www) hacia los assets nativos de Android.
@@ -61,10 +72,21 @@ jobs:
     - name: Rename APK
       run: cp AppMovil/android/app/build/outputs/apk/debug/app-debug.apk ControlLavanderia-Movil.apk
 
+    # Crea el bundle web OTA (zip del contenido de www) y el manifiesto que la
+    # app consulta para detectar nuevas versiones. La URL /releases/latest/...
+    # siempre apunta al ultimo Release publicado, asi que es estable.
+    - name: Crear bundle OTA y manifiesto
+      run: |
+        ( cd AppMovil/www && zip -r ../../bundle.zip . >/dev/null )
+        printf '{"version":"1.0.%s","url":"https://github.com/Datnya/controlavander-a/releases/latest/download/bundle.zip"}\n' "${{ github.run_number }}" > mobile-update.json
+        echo "manifest =>" && cat mobile-update.json
+        ls -la bundle.zip mobile-update.json
+
     # Publica un Release con link de descarga PERMANENTE y PUBLICO (el cliente
     # no necesita cuenta ni token de GitHub para bajar el instalador). La
     # activacion por licencia sigue protegiendo la app: descargarla no la activa.
-    - name: Publicar Release con el APK
+    # Adjunta tambien el bundle OTA y el manifiesto para las actualizaciones.
+    - name: Publicar Release (APK + bundle OTA)
       uses: softprops/action-gh-release@v2
       with:
         tag_name: movil-v1.0.${{ github.run_number }}
@@ -73,5 +95,10 @@ jobs:
           APK de la aplicacion movil Control de Lavanderia.
           Descarga el archivo ControlLavanderia-Movil.apk e instalalo en el celular.
           La app requiere activacion con un codigo de licencia valido.
-        files: ControlLavanderia-Movil.apk
+
+          Las apps ya instaladas (con motor OTA) se actualizan solas a esta version.
+        files: |
+          ControlLavanderia-Movil.apk
+          bundle.zip
+          mobile-update.json
         make_latest: true
