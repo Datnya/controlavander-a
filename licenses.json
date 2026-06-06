@@ -11,6 +11,12 @@
       "client_name": "Prueba PC (temporal - quitar luego)",
       "activated_device": "",
       "status": "active"
+    },
+    {
+      "code": "PRUEBA-MOVIL-2026",
+      "client_name": "Prueba Movil (temporal - quitar luego)",
+      "activated_device": "MOB-59KRVN8I6",
+      "status": "active"
     }
   ]
 }
