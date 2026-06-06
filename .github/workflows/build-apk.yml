@@ -9,6 +9,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # Necesario para que el workflow pueda crear Releases con el APK adjunto.
+    permissions:
+      contents: write
+
     steps:
     - uses: actions/checkout@v4
 
@@ -52,3 +56,22 @@ jobs:
       with:
         name: Lavanderia-App-v2
         path: AppMovil/android/app/build/outputs/apk/debug/app-debug.apk
+
+    # Renombra el APK a un nombre amigable para la descarga del cliente.
+    - name: Rename APK
+      run: cp AppMovil/android/app/build/outputs/apk/debug/app-debug.apk ControlLavanderia-Movil.apk
+
+    # Publica un Release con link de descarga PERMANENTE y PUBLICO (el cliente
+    # no necesita cuenta ni token de GitHub para bajar el instalador). La
+    # activacion por licencia sigue protegiendo la app: descargarla no la activa.
+    - name: Publicar Release con el APK
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: movil-v1.0.${{ github.run_number }}
+        name: Control de Lavanderia - Movil (build ${{ github.run_number }})
+        body: |
+          APK de la aplicacion movil Control de Lavanderia.
+          Descarga el archivo ControlLavanderia-Movil.apk e instalalo en el celular.
+          La app requiere activacion con un codigo de licencia valido.
+        files: ControlLavanderia-Movil.apk
+        make_latest: true
