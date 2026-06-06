@@ -1,0 +1,46 @@
+name: Build Windows App (PC)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'src/**'
+      - 'assets/**'
+      - 'forge.config.js'
+      - 'package.json'
+      - '.github/workflows/build-pc.yml'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Instala dependencias (incluye better-sqlite3, modulo nativo).
+      - name: Install dependencies
+        run: npm install
+
+      # electron-forge make: reconstruye los modulos nativos para Electron y
+      # genera el instalador Squirrel (Setup.exe + RELEASES + .nupkg) en out/make.
+      - name: Build installer (electron-forge make)
+        run: npm run make
+
+      - name: List build output
+        run: Get-ChildItem -Recurse out/make | Select-Object FullName, Length
+        shell: pwsh
+
+      # Por ahora solo subimos el instalador como artifact para verificar el
+      # build. La publicacion al repo controlavander-pc se conecta en el
+      # siguiente paso, una vez definido el token de publicacion.
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ControlLavanderia-PC
+          path: out/make/**/*

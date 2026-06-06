@@ -1,9 +1,17 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
-// Auto-actualizador de GitHub
+// Auto-actualizador de GitHub. Los instaladores de PC se publican en un repo
+// publico separado (controlavander-pc) para no mezclarse con los Releases del
+// celular. update-electron-app consulta ese repo y, si hay una version nueva,
+// la descarga e instala automaticamente al abrir la app (solo en la version
+// instalada con el Setup.exe de Squirrel).
 const { updateElectronApp } = require('update-electron-app');
-updateElectronApp();
+updateElectronApp({
+  repo: 'Datnya/controlavander-pc',
+  updateInterval: '1 hour',
+  notifyUser: true
+});
 
 // Manejar eventos de Squirrel (instalador Windows)
 if (require('electron-squirrel-startup')) app.quit();
