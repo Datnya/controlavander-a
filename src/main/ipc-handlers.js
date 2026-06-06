@@ -89,6 +89,11 @@ function registerIpcHandlers() {
     catch (e) { return { success: false, error: e.message }; }
   });
 
+  ipcMain.handle('orders:delete', async (_, id) => {
+    try { db.deleteOrder(id); return { success: true }; }
+    catch (e) { return { success: false, error: e.message }; }
+  });
+
   // ==================== SERVICIOS ====================
   ipcMain.handle('services:getAll', async () => {
     try { return { success: true, data: db.getAllServices() }; }

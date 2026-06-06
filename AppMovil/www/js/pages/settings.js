@@ -129,6 +129,27 @@ window.settingsPage = {
           </div>
         </div>
 
+        <!-- Actualizaciones (OTA) -->
+        <div class="card settings-section">
+          <div class="settings-section-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
+            <h3>Actualizaciones</h3>
+          </div>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <div class="flex-between align-center">
+              <div>
+                <div class="text-xs text-gray-500 mb-1">VERSIÓN INSTALADA</div>
+                <div class="font-bold text-gray-800 font-mono" id="otaVersion">-</div>
+              </div>
+              <button class="btn btn-sm btn-secondary" id="btnCheckUpdate" onclick="settingsPage.checkUpdates()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21v-5h5"/></svg>
+                Buscar actualizaciones
+              </button>
+            </div>
+            <div class="text-xs text-gray-400 mt-3">La app se actualiza sola al abrirla. Aquí puedes forzar la búsqueda.</div>
+          </div>
+        </div>
+
         <!-- About -->
         <div class="settings-about">
           <div class="foxy-logo">Foxy Studios</div>
@@ -147,6 +168,17 @@ window.settingsPage = {
     await this.loadSettings();
     await this.loadServices();
     await this.loadLicenseInfo();
+
+    const vEl = document.getElementById('otaVersion');
+    if (vEl) vEl.textContent = (window.__bundleVersion ? window.__bundleVersion() : (window.__APP_BUNDLE_VERSION__ || 'dev'));
+  },
+
+  checkUpdates() {
+    if (window.__checkForUpdate) {
+      window.__checkForUpdate(true);
+    } else if (window.toast) {
+      toast.info('Actualizaciones', 'No disponible en esta instalación.');
+    }
   },
 
   async loadSettings() {

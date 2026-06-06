@@ -666,6 +666,15 @@ function clearOldOrders() {
   return result.changes;
 }
 
+/**
+ * Elimina un pedido por su id. Se usa cuando el pedido fue registrado por error;
+ * al borrarlo deja de contar en reportes, dashboard e ingresos.
+ */
+function deleteOrder(id) {
+  const result = db.prepare('DELETE FROM orders WHERE id = ?').run(id);
+  return result.changes > 0;
+}
+
 module.exports = {
   initDatabase, getDatabase,
   // Clientes
@@ -674,7 +683,7 @@ module.exports = {
   getAllServices, getActiveServices, createService, updateService, toggleServiceActive,
   // Pedidos
   getNextOrderNumber, getAllOrders, getOrderById, createOrder, updateOrder, updateOrderStatus,
-  getOrdersByClient, getActiveOrders, getTodayOrders, clearOldOrders,
+  getOrdersByClient, getActiveOrders, getTodayOrders, clearOldOrders, deleteOrder,
   // Configuración
   getSetting, getAllSettings, setSetting, getBulkSettings,
   // Reportes

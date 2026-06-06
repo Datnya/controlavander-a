@@ -150,6 +150,14 @@ window.orderDetailPage = {
                 Entregado al cliente
               </button>
             </div>
+
+            <div class="mt-4 pt-4 border-top">
+              <button class="btn btn-danger w-100" style="justify-content: center;" onclick="orderDetailPage.deleteOrder()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                Eliminar Pedido
+              </button>
+              <div class="text-xs text-gray-400 text-center mt-2">Úsalo solo si el pedido se registró por error. No contará en los reportes.</div>
+            </div>
           </div>
         </div>
       </div>
@@ -275,6 +283,28 @@ window.orderDetailPage = {
         }
       },
       'info'
+    );
+  },
+
+  async deleteOrder() {
+    modal.confirm(
+      'Eliminar Pedido',
+      '¿Seguro que deseas ELIMINAR este pedido? Esta acción no se puede deshacer. El pedido desaparecerá y su monto no se reflejará en los reportes ni ingresos.',
+      async () => {
+        try {
+          const res = await window.api.orders.delete(this.orderId);
+          if (res.success) {
+            toast.success('Pedido Eliminado', 'El pedido fue eliminado del sistema.');
+            app.updateActiveOrdersBadge();
+            app.navigate('orders');
+          } else {
+            throw new Error(res.error);
+          }
+        } catch (e) {
+          toast.error('Error', 'No se pudo eliminar el pedido');
+        }
+      },
+      'danger'
     );
   },
 

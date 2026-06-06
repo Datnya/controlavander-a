@@ -133,6 +133,7 @@ window.api = {
             if (status === 'delivered') updateData.delivered_date = getNow();
             return db.orders.update(id, updateData);
         }),
+        delete: (id) => wrap(() => db.orders.delete(id)),
         getByClient: (clientId) => wrap(() => db.orders.where('client_id').equals(clientId).reverse().toArray()),
         getNextNumber: () => wrap(async () => {
             const last = await db.orders.orderBy('id').last();

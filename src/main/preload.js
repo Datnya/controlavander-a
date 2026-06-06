@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('api', {
     create: (data) => ipcRenderer.invoke('orders:create', data),
     update: (id, data) => ipcRenderer.invoke('orders:update', id, data),
     updateStatus: (id, status) => ipcRenderer.invoke('orders:updateStatus', id, status),
+    delete: (id) => ipcRenderer.invoke('orders:delete', id),
     getByClient: (clientId) => ipcRenderer.invoke('orders:getByClient', clientId),
     getNextNumber: () => ipcRenderer.invoke('orders:getNextNumber'),
     getActive: () => ipcRenderer.invoke('orders:getActive'),
