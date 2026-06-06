@@ -5,6 +5,12 @@
       "client_name": "CLIENTE NRO 1",
       "activated_device": "AQUI_VA_EL_ID_DEL_CLIENTE",
       "status": "active"
+    },
+    {
+      "code": "FOXY-DEMO-YAMIL",
+      "client_name": "Demo del proveedor (Yamil)",
+      "activated_device": "MOB-ASGW2SP3U",
+      "status": "active"
     }
   ]
 }
