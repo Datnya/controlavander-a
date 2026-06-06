@@ -44,11 +44,11 @@ jobs:
 
       - name: Read app version
         id: ver
-        shell: pwsh
+        shell: bash
         run: |
-          $v = (Get-Content package.json -Raw | ConvertFrom-Json).version
-          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
-          Write-Host "App version: $v"
+          V=$(node -p "require('./package.json').version")
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "App version: $V"
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
