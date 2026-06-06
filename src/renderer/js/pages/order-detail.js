@@ -10,18 +10,16 @@ window.orderDetailPage = {
     }
 
     return `
-      <div class="flex-between align-center mb-6">
-        <button class="btn btn-secondary btn-sm" onclick="app.navigate('orders')">
+      <div class="flex-align mb-6" style="gap: 12px; flex-wrap: wrap;">
+        <button class="btn btn-secondary" onclick="app.navigate('orders')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
           Volver a Pedidos
         </button>
-        
-        <div class="flex-align gap-3">
-          <button class="btn btn-primary" onclick="app.navigate('receipt', {id: ${this.orderId}})">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            Comprobante Digital
-          </button>
-        </div>
+
+        <button class="btn btn-primary" onclick="app.navigate('receipt', {id: ${this.orderId}})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Comprobante Digital
+        </button>
       </div>
 
       <div class="grid grid-3">

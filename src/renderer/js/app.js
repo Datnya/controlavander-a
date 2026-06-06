@@ -135,6 +135,7 @@ const app = {
     });
 
     // Casos especiales para títulos
+    if (route === 'orders') document.getElementById('pageTitle').textContent = 'Pedidos';
     if (route === 'order-detail') document.getElementById('pageTitle').textContent = 'Detalle del Pedido';
     if (route === 'receipt') document.getElementById('pageTitle').textContent = 'Comprobante Digital';
 

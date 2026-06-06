@@ -151,6 +151,29 @@
   }
 }
 
+/* Detalle del pedido: en móvil la grilla de datos del cliente/fechas debe ser
+   de una sola columna y el texto NUNCA debe salirse del cuadro. */
+.order-detail-grid {
+  grid-template-columns: 1fr !important;
+  gap: 4px !important;
+}
+.order-detail-info .info-row {
+  gap: 10px;
+  align-items: baseline;
+}
+.order-detail-info .info-label {
+  width: auto !important;
+  min-width: 95px;
+}
+.order-detail-info .info-value {
+  margin-left: auto;
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.card { overflow: hidden; }
+
 /* Stat cards en móvil */
 .stat-card {
   padding: 14px;

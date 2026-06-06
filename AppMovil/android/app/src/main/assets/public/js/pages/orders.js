@@ -31,6 +31,11 @@ window.ordersPage = {
         </div>
       </div>
 
+      <div class="orders-count-chip" style="display:flex; align-items:center; gap:8px; margin-bottom:16px; padding:9px 14px; background:var(--color-primary-50); border:1px solid var(--color-primary-200); border-radius:10px; width:fit-content;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-600)" stroke-width="2" width="16" height="16"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span id="ordersCountText" style="font-weight:600; color:var(--color-primary-700); font-size:14px;">0 pedidos</span>
+      </div>
+
       <div class="table-wrapper">
         <table class="table">
           <thead>
@@ -111,7 +116,11 @@ window.ordersPage = {
   renderTable() {
     const tbody = document.getElementById('ordersTableBody');
     if (!tbody) return;
-    
+
+    // Contador real y actualizado de pedidos en la lista actual
+    const countEl = document.getElementById('ordersCountText');
+    if (countEl) countEl.textContent = `${this.data.length} ${this.data.length === 1 ? 'pedido' : 'pedidos'}`;
+
     if (this.data.length === 0) {
       tbody.innerHTML = `
         <tr>

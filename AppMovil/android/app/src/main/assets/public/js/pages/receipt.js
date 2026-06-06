@@ -103,6 +103,36 @@ window.receiptPage = {
     if (order.weight_kg > 0 && order.garment_count > 0) serviceDetail += ' / ';
     if (order.garment_count > 0) serviceDetail += `${order.garment_count} pzas`;
 
+    // Estado de pago para el comprobante (adelanto / saldo / pagado)
+    const paymentStatus = order.payment_status || 'pending';
+    const advancePaid = paymentStatus === 'partial' ? (order.advance_payment || 0)
+                      : (paymentStatus === 'paid' ? order.final_amount : 0);
+    const balanceDue = Math.max(0, order.final_amount - advancePaid);
+    let paymentBlock = '';
+    if (paymentStatus === 'paid') {
+      paymentBlock = `
+      <div class="receipt-row mt-2">
+        <span class="receipt-label">Estado de pago:</span>
+        <span class="receipt-value font-bold" style="color:#059669;">PAGADO / CANCELADO</span>
+      </div>`;
+    } else if (paymentStatus === 'partial') {
+      paymentBlock = `
+      <div class="receipt-row mt-2">
+        <span class="receipt-label">Adelanto pagado:</span>
+        <span class="receipt-value" style="color:#059669; font-weight:bold;">${format.currency(advancePaid)}</span>
+      </div>
+      <div class="receipt-row">
+        <span class="receipt-label" style="font-weight:bold;">Saldo pendiente:</span>
+        <span class="receipt-value" style="color:#dc2626; font-weight:bold;">${format.currency(balanceDue)}</span>
+      </div>`;
+    } else {
+      paymentBlock = `
+      <div class="receipt-row mt-2">
+        <span class="receipt-label" style="font-weight:bold;">Saldo pendiente:</span>
+        <span class="receipt-value" style="color:#dc2626; font-weight:bold;">${format.currency(balanceDue)}</span>
+      </div>`;
+    }
+
     const html = `
       <div class="receipt-header-section">
         <div class="receipt-business-name">${bizName}</div>
@@ -159,9 +189,10 @@ window.receiptPage = {
         <span class="receipt-label">TOTAL</span>
         <span class="receipt-value">${format.currency(order.final_amount)}</span>
       </div>
-      
+      ${paymentBlock}
+
       <div class="receipt-divider"></div>
-      
+
       <div class="receipt-row mt-2">
         <span class="receipt-label">Estado:</span>
         <span class="receipt-value font-bold">${format.statusText(order.status).toUpperCase()}</span>

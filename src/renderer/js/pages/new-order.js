@@ -29,16 +29,17 @@ window.newOrderPage = {
               <div id="clientAutocompleteResults" class="autocomplete-results"></div>
             </div>
 
-            <div id="selectedClientCard" class="mt-4 p-4 bg-gray-50 rounded-lg" style="display: none; border: 1px solid var(--color-gray-200);">
-              <div class="flex-between align-center">
-                <div>
-                  <div class="font-bold text-primary" id="selectedClientName">Nombre</div>
-                  <div class="text-sm text-gray-500" id="selectedClientPhone">Teléfono</div>
-                </div>
-                <button class="btn btn-icon btn-sm btn-ghost text-danger" onclick="newOrderPage.clearClient()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
+            <div id="selectedClientCard" class="mt-4" style="display: none; align-items: center; gap: 12px; padding: 14px 16px; background: var(--color-primary-50); border: 1.5px solid var(--color-primary-300); border-radius: 12px;">
+              <div style="flex-shrink:0; width:42px; height:42px; border-radius:50%; background:var(--color-primary-100); display:flex; align-items:center; justify-content:center; color:var(--color-primary-600);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
+              <div style="flex:1; min-width:0; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+                <span class="font-bold" id="selectedClientName" style="color:var(--color-primary-700); font-size:15px;">Nombre</span>
+                <span id="selectedClientPhone" style="color:var(--color-primary-600); font-size:13px; font-weight:500;">Teléfono</span>
+              </div>
+              <button class="btn btn-icon btn-sm btn-ghost text-danger" style="flex-shrink:0;" onclick="newOrderPage.clearClient()" title="Quitar cliente">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
           </div>
 
@@ -304,7 +305,7 @@ window.newOrderPage = {
     // textContent evita cualquier inyección; los nombres con comillas ya no rompen nada.
     document.getElementById('selectedClientName').textContent = client ? client.full_name : '';
     document.getElementById('selectedClientPhone').textContent = (client && client.phone) ? client.phone : 'Sin teléfono';
-    card.style.display = 'block';
+    card.style.display = 'flex';
 
     this.validateForm();
   },

@@ -71,7 +71,11 @@ window.clientsPage = {
 
   renderTable() {
     const tbody = document.getElementById('clientsTableBody');
-    
+    // Si la tabla no existe (ej. se creo un cliente desde "Nuevo Pedido"),
+    // no hay nada que renderizar aqui — evita el error falso "No se pudieron
+    // cargar los clientes".
+    if (!tbody) return;
+
     if (this.data.length === 0) {
       tbody.innerHTML = `
         <tr>
