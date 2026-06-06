@@ -5,18 +5,6 @@
       "client_name": "CLIENTE NRO 1",
       "activated_device": "AQUI_VA_EL_ID_DEL_CLIENTE",
       "status": "active"
-    },
-    {
-      "code": "PRUEBA-PC-2026",
-      "client_name": "Prueba PC (temporal - quitar luego)",
-      "activated_device": "",
-      "status": "active"
-    },
-    {
-      "code": "PRUEBA-MOVIL-2026",
-      "client_name": "Prueba Movil (temporal - quitar luego)",
-      "activated_device": "MOB-ASGW2SP3U",
-      "status": "active"
     }
   ]
 }
