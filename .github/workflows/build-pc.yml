@@ -15,6 +15,12 @@ jobs:
   build:
     runs-on: windows-latest
 
+    # Token (fino, limitado a controlavander-pc) para publicar los instaladores.
+    # Mientras no exista el secret, el paso de publicacion se omite y el build
+    # sigue funcionando (solo sube el artifact).
+    env:
+      PC_TOKEN: ${{ secrets.PC_RELEASE_TOKEN }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -36,11 +42,40 @@ jobs:
         run: Get-ChildItem -Recurse out/make | Select-Object FullName, Length
         shell: pwsh
 
-      # Por ahora solo subimos el instalador como artifact para verificar el
-      # build. La publicacion al repo controlavander-pc se conecta en el
-      # siguiente paso, una vez definido el token de publicacion.
+      - name: Read app version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "App version: $v"
+
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: ControlLavanderia-PC
-          path: out/make/**/*
+          path: |
+            out/make/squirrel.windows/x64/*.exe
+            out/make/squirrel.windows/x64/*.nupkg
+            out/make/squirrel.windows/x64/RELEASES
+
+      # Publica los archivos Squirrel en el repo publico separado de PC. Esto
+      # alimenta el auto-updater de Electron (update.electronjs.org lee RELEASES).
+      # Se omite automaticamente si todavia no esta configurado el secret.
+      - name: Publicar instalador PC (auto-update)
+        if: ${{ env.PC_TOKEN != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: Datnya/controlavander-pc
+          token: ${{ secrets.PC_RELEASE_TOKEN }}
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: Control de Lavanderia PC v${{ steps.ver.outputs.version }}
+          body: |
+            Instalador de escritorio (Windows) de Control de Lavanderia.
+            Instala ControlLavanderia-Setup.exe. Las versiones ya instaladas se
+            actualizan solas a esta version al abrir la app.
+          files: |
+            out/make/squirrel.windows/x64/*.exe
+            out/make/squirrel.windows/x64/*.nupkg
+            out/make/squirrel.windows/x64/RELEASES
+          make_latest: true
