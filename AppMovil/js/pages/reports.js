@@ -1,6 +1,8 @@
 window.reportsPage = {
   currentPeriod: 'monthly', // daily, weekly, monthly
   data: null,
+  historyExpanded: false,
+  historyRange: null, // { from, to } del periodo seleccionado
 
   async render() {
     return `
@@ -71,6 +73,18 @@ window.reportsPage = {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Historial de pedidos del periodo (desplegable) -->
+      <div class="card mt-6">
+        <div class="flex-between align-center" style="cursor: pointer;" onclick="reportsPage.toggleHistory()">
+          <h3 class="font-semibold text-md flex-align gap-2" style="margin:0;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Historial de pedidos del periodo
+          </h3>
+          <svg id="histChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="transition: transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div id="historyContainer" style="display: none; margin-top: 16px;"></div>
       </div>
     `;
   },
@@ -148,24 +162,83 @@ window.reportsPage = {
       if (this.currentPeriod === 'daily') {
         const date = document.getElementById('repDate').value;
         res = await window.api.reports.getDailySummary(date);
+        this.historyRange = { from: date, to: date };
       } else if (this.currentPeriod === 'weekly') {
         const start = document.getElementById('repWeekStart').value;
         const end = document.getElementById('repWeekEnd').value;
         res = await window.api.reports.getWeeklySummary(start, end);
+        this.historyRange = { from: start, to: end };
       } else if (this.currentPeriod === 'monthly') {
         const monthVal = document.getElementById('repMonth').value;
         const parts = monthVal.split('-');
         res = await window.api.reports.getMonthlySummary(parts[0], parts[1]);
+        const lastDay = new Date(parseInt(parts[0]), parseInt(parts[1]), 0).getDate();
+        this.historyRange = { from: `${parts[0]}-${parts[1]}-01`, to: `${parts[0]}-${parts[1]}-${String(lastDay).padStart(2, '0')}` };
       }
 
       if (res && res.success) {
         this.data = res.data;
         this.updateUI();
       }
+      // Si el historial está desplegado, refrescarlo con el nuevo periodo
+      if (this.historyExpanded) this.loadHistory();
     } catch (e) {
       console.error('Error cargando reportes', e);
       toast.error('Error', 'No se pudieron cargar los reportes');
     }
+  },
+
+  toggleHistory() {
+    this.historyExpanded = !this.historyExpanded;
+    const cont = document.getElementById('historyContainer');
+    const chev = document.getElementById('histChevron');
+    if (this.historyExpanded) {
+      if (cont) cont.style.display = 'block';
+      if (chev) chev.style.transform = 'rotate(180deg)';
+      this.loadHistory();
+    } else {
+      if (cont) cont.style.display = 'none';
+      if (chev) chev.style.transform = 'rotate(0deg)';
+    }
+  },
+
+  async loadHistory() {
+    const cont = document.getElementById('historyContainer');
+    if (!cont || !this.historyRange) return;
+    cont.innerHTML = '<div class="empty-state" style="padding:20px;"><div class="spinner"></div></div>';
+    try {
+      const res = await window.api.orders.getAll({ dateFrom: this.historyRange.from, dateTo: this.historyRange.to });
+      if (res.success) this.renderHistoryList(res.data || []);
+      else cont.innerHTML = '<div class="empty-state text-sm text-gray-500" style="padding:16px;">No se pudo cargar el historial</div>';
+    } catch (e) {
+      cont.innerHTML = '<div class="empty-state text-sm text-gray-500" style="padding:16px;">No se pudo cargar el historial</div>';
+    }
+  },
+
+  renderHistoryList(orders) {
+    const cont = document.getElementById('historyContainer');
+    if (!cont) return;
+    if (!orders.length) {
+      cont.innerHTML = '<div class="empty-state text-sm text-gray-500" style="padding:16px;">No hay pedidos en este periodo</div>';
+      return;
+    }
+    let html = `<div class="text-xs text-gray-500 mb-3">${orders.length} ${orders.length === 1 ? 'pedido' : 'pedidos'} en el periodo</div><div class="flex-col gap-2">`;
+    orders.forEach(o => {
+      html += `
+        <div class="card-hover" style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--color-gray-100); border-radius:10px; cursor:pointer;" onclick="app.navigate('order-detail', {id: ${o.id}})">
+          <div style="min-width:0;">
+            <div class="font-bold text-primary">${format.escapeHtml(o.order_number)}</div>
+            <div class="font-medium text-gray-800 truncate">${format.escapeHtml(o.client_name)}</div>
+            <div class="text-xs text-gray-400">${format.datetime(o.received_date)} · ${format.escapeHtml(o.service_name)}</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div class="font-bold text-gray-900">${format.currency(o.final_amount)}</div>
+            <div class="mt-1">${format.statusBadge(o.status)}</div>
+          </div>
+        </div>`;
+    });
+    html += '</div>';
+    cont.innerHTML = html;
   },
 
   updateUI() {

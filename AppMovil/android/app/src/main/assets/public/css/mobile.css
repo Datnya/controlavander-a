@@ -183,6 +183,26 @@
   font-size: 22px;
 }
 
+/* Dashboard en móvil: "Ingresos" a ancho completo arriba; "Recibidos Hoy" y
+   "En Proceso" lado a lado y compactos, para que el ícono no se corte. */
+.dashboard-stats.grid-4 {
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px;
+}
+.dashboard-stats .income-card-large {
+  grid-column: 1 / -1 !important;
+}
+.dashboard-stats .stat-content { min-width: 0; }
+.dashboard-stats .card-hover { padding: 14px; }
+.dashboard-stats .card-hover .stat-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+.dashboard-stats .card-hover .stat-icon svg { width: 18px; height: 18px; }
+.dashboard-stats .card-hover .stat-value { font-size: 20px; }
+.dashboard-stats .card-hover .stat-label { font-size: 11px; }
+
 /* Tablas con scroll horizontal */
 .table-wrapper {
   overflow-x: auto;
