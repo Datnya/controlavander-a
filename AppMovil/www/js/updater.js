@@ -7,7 +7,10 @@
 // fallara al arrancar. window.__checkForUpdate(true) permite forzar la
 // comprobacion desde Configuracion.
 (function () {
-  var MANIFEST_URL = 'https://github.com/Datnya/controlavander-a/releases/latest/download/mobile-update.json';
+  // Se consulta la API de GitHub (permite CORS: Access-Control-Allow-Origin: *).
+  // El link directo del release NO manda CORS tras su redirect, por eso el fetch
+  // se bloqueaba en silencio. La API da la version (tag) y la URL del bundle.
+  var RELEASE_API = 'https://api.github.com/repos/Datnya/controlavander-a/releases/latest';
 
   function currentVersion() {
     return (typeof window.__APP_BUNDLE_VERSION__ === 'string') ? window.__APP_BUNDLE_VERSION__ : 'dev';
@@ -32,28 +35,37 @@
     // Confirma que el bundle actual arranco bien (cancela el rollback automatico).
     try { await Updater.notifyAppReady(); } catch (e) {}
 
-    var manifest;
+    var release;
     try {
-      var res = await fetch(MANIFEST_URL + '?t=' + Date.now(), { cache: 'no-store' });
+      var res = await fetch(RELEASE_API + '?t=' + Date.now(), {
+        cache: 'no-store',
+        headers: { 'Accept': 'application/vnd.github+json' }
+      });
       if (!res.ok) { if (manual) notify('error', 'Actualizaciones', 'No se pudo consultar el servidor (HTTP ' + res.status + ').'); return; }
-      manifest = await res.json();
+      release = await res.json();
     } catch (e) {
       if (manual) notify('error', 'Actualizaciones', 'Sin conexion para buscar actualizaciones.');
       return;
     }
 
-    if (!manifest || !manifest.version || !manifest.url) {
-      if (manual) notify('error', 'Actualizaciones', 'Respuesta del servidor invalida.');
+    // tag tipo "movil-v1.0.17" -> "1.0.17"; bundle.zip desde los assets.
+    var newVersion = (release && release.tag_name) ? String(release.tag_name).replace(/^movil-v/i, '').replace(/^v/i, '') : '';
+    var assets = (release && release.assets) || [];
+    var bundleAsset = assets.filter(function (a) { return a && a.name === 'bundle.zip'; })[0];
+    var bundleUrl = bundleAsset ? bundleAsset.browser_download_url : '';
+
+    if (!newVersion || !bundleUrl) {
+      if (manual) notify('error', 'Actualizaciones', 'No se encontro el paquete de actualizacion.');
       return;
     }
-    if (manifest.version === currentVersion()) {
+    if (newVersion === currentVersion()) {
       if (manual) notify('success', 'Todo al dia', 'Ya tienes la ultima version (' + currentVersion() + ').');
       return;
     }
 
-    notify('info', 'Actualizando app', 'Descargando mejoras (v' + manifest.version + ')...');
+    notify('info', 'Actualizando app', 'Descargando mejoras (v' + newVersion + ')...');
     try {
-      var bundle = await Updater.download({ url: manifest.url, version: manifest.version });
+      var bundle = await Updater.download({ url: bundleUrl, version: newVersion });
       await Updater.set({ id: bundle.id });
       notify('success', 'Actualizacion lista', 'Aplicando la nueva version...');
       setTimeout(function () {
