@@ -8,8 +8,14 @@
     },
     {
       "code": "FOXY-DEMO-YAMIL",
-      "client_name": "Demo del proveedor (Yamil)",
-      "activated_device": "MOB-ASGW2SP3U",
+      "client_name": "Demo del proveedor (Yamil) - Movil",
+      "activated_device": "MOB-TKZ74LVDT",
+      "status": "active"
+    },
+    {
+      "code": "FOXY-DEMO-PC",
+      "client_name": "Demo del proveedor (Yamil) - PC",
+      "activated_device": "",
       "status": "active"
     }
   ]
