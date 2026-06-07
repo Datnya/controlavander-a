@@ -146,7 +146,7 @@ window.newOrderPage = {
     // Set default date (tomorrow)
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    document.getElementById('orderDeliveryDate').value = tomorrow.toISOString().split('T')[0];
+    document.getElementById('orderDeliveryDate').value = format.localDateStr(tomorrow);
 
     this.bindEvents();
   },

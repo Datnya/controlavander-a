@@ -557,7 +557,9 @@ function getWeeklySummary(startDate, endDate) {
 
 function getMonthlySummary(year, month) {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+  // Último día real del mes (28/29/30/31), no siempre 31.
+  const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
   const summary = db.prepare(`
     SELECT 

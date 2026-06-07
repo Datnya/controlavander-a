@@ -280,10 +280,9 @@ window.receiptPage = {
     // Open WA Web
     const msg = encodeURIComponent(`Hola ${this.data.order.client_name}, aquí tienes el comprobante de tu pedido ${this.data.order.order_number}.`);
     
-    // In Electron renderer without shell module, window.open works best for external links if webPreferences allows it,
-    // or we can just create an anchor and click it.
+    // Abrir WhatsApp en el navegador del sistema (no en una ventana de Electron).
     const waUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${msg}`;
-    window.open(waUrl, '_blank');
+    window.api.app.openExternal(waUrl);
     
     setTimeout(() => {
       btn.disabled = false;

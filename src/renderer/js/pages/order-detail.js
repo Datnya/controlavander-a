@@ -208,7 +208,7 @@ window.orderDetailPage = {
     
     document.getElementById('detailTotalAmount').textContent = format.currency(d.final_amount);
     
-    let notesText = d.garment_observations || '';
+    let notesText = format.escapeHtml(d.garment_observations || '');
     if (d.discount > 0) {
       notesText += `<br><br><span class="text-primary font-medium">Se aplicó un descuento de ${format.currency(d.discount)}</span>`;
     }

@@ -16,6 +16,18 @@ const format = {
   },
 
   /**
+   * Devuelve la fecha en formato YYYY-MM-DD usando la hora LOCAL del equipo
+   * (no UTC). Evita que de noche, en zonas como UTC-5, la fecha salte al día
+   * siguiente como ocurría con toISOString().split('T')[0].
+   * @param {Date|string} [date] Fecha (por defecto hoy)
+   * @returns {string}
+   */
+  localDateStr(date) {
+    const d = date ? new Date(date) : new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  },
+
+  /**
    * Formatea un número como moneda (Soles)
    * @param {number} amount Monto a formatear
    * @returns {string} Ej: S/ 120.50

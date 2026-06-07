@@ -172,7 +172,10 @@
   overflow-wrap: anywhere;
   word-break: break-word;
 }
-.card { overflow: hidden; }
+/* Acotado SOLO al detalle del pedido: evita que el texto se salga de la tarjeta.
+   NO usar overflow:hidden global porque recorta el dropdown de autocompletado
+   de clientes en "Nuevo Pedido". */
+#detailHeaderCard { overflow: hidden; }
 
 /* Stat cards en móvil */
 .stat-card {

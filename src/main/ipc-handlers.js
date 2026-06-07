@@ -1,4 +1,4 @@
-const { ipcMain, clipboard, nativeImage, BrowserWindow, app, dialog } = require('electron');
+const { ipcMain, clipboard, nativeImage, BrowserWindow, app, dialog, shell } = require('electron');
 const fs = require('fs');
 const db = require('./database');
 const license = require('./license');
@@ -241,6 +241,13 @@ function registerIpcHandlers() {
   // ==================== APP ====================
   ipcMain.handle('app:getVersion', async () => {
     return app.getVersion();
+  });
+
+  // Abre un enlace en el navegador del sistema (ej. WhatsApp Web), no en una
+  // ventana de Electron.
+  ipcMain.handle('app:openExternal', async (_, url) => {
+    try { await shell.openExternal(url); return { success: true }; }
+    catch (e) { return { success: false, error: e.message }; }
   });
 
   ipcMain.handle('app:minimize', async () => {

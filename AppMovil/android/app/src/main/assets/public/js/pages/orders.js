@@ -141,11 +141,11 @@ window.ordersPage = {
         <tr style="cursor: pointer;" onclick="app.navigate('order-detail', {id: ${order.id}})">
           <td class="font-bold text-primary">${order.order_number}</td>
           <td>
-            <div class="font-medium text-gray-800">${order.client_name}</div>
-            ${order.client_phone ? `<div class="text-xs text-gray-400">${order.client_phone}</div>` : ''}
+            <div class="font-medium text-gray-800">${format.escapeHtml(order.client_name)}</div>
+            ${order.client_phone ? `<div class="text-xs text-gray-400">${format.escapeHtml(order.client_phone)}</div>` : ''}
           </td>
           <td>
-            <div class="text-sm">${order.service_name}</div>
+            <div class="text-sm">${format.escapeHtml(order.service_name)}</div>
             <div class="text-xs text-gray-500">${order.weight_kg > 0 ? order.weight_kg + ' Kg' : ''} ${order.garment_count > 0 ? order.garment_count + ' prendas' : ''}</div>
           </td>
           <td class="text-gray-500 text-sm">

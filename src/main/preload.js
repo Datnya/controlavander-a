@@ -72,6 +72,7 @@ contextBridge.exposeInMainWorld('api', {
   // ==================== APP ====================
   app: {
     getVersion: () => ipcRenderer.invoke('app:getVersion'),
+    openExternal: (url) => ipcRenderer.invoke('app:openExternal', url),
     minimize: () => ipcRenderer.invoke('app:minimize'),
     maximize: () => ipcRenderer.invoke('app:maximize'),
     close: () => ipcRenderer.invoke('app:close'),

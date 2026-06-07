@@ -167,9 +167,9 @@ window.dashboardPage = {
             <span class="font-bold text-primary">${order.order_number}</span>
             <span class="text-xs text-gray-400">${format.date(order.received_date)}</span>
           </div>
-          <div class="font-medium text-gray-800 truncate mb-1">${order.client_name}</div>
+          <div class="font-medium text-gray-800 truncate mb-1">${format.escapeHtml(order.client_name)}</div>
           <div class="flex-between align-center">
-            <span class="text-sm text-gray-500 truncate" style="max-width: 60%;">${order.service_name}</span>
+            <span class="text-sm text-gray-500 truncate" style="max-width: 60%;">${format.escapeHtml(order.service_name)}</span>
             <span class="font-bold text-gray-900">${format.currency(order.final_amount)}</span>
           </div>
         </div>
@@ -196,10 +196,10 @@ window.dashboardPage = {
         <tr style="cursor: pointer;" onclick="app.navigate('order-detail', {id: ${order.id}})">
           <td class="font-medium text-primary">${order.order_number}</td>
           <td>
-            <div class="font-medium text-gray-800">${order.client_name}</div>
-            ${order.client_phone ? `<div class="text-xs text-gray-400">${order.client_phone}</div>` : ''}
+            <div class="font-medium text-gray-800">${format.escapeHtml(order.client_name)}</div>
+            ${order.client_phone ? `<div class="text-xs text-gray-400">${format.escapeHtml(order.client_phone)}</div>` : ''}
           </td>
-          <td class="text-gray-600">${order.service_name}</td>
+          <td class="text-gray-600">${format.escapeHtml(order.service_name)}</td>
           <td class="font-medium">${format.currency(order.final_amount)}</td>
           <td>${format.statusBadge(order.status)}</td>
         </tr>

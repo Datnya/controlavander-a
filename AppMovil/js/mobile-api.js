@@ -91,11 +91,13 @@ window.api = {
                 orders = orders.filter(o => o.payment_status === 'pending' || o.payment_status === 'partial' || !o.payment_status);
             }
 
-            if (filters.dateFrom && filters.dateTo) {
+            if (filters.dateFrom || filters.dateTo) {
                 orders = orders.filter(o => {
                     if (!o.received_date) return false;
                     const d = o.received_date.split('T')[0];
-                    return d >= filters.dateFrom && d <= filters.dateTo;
+                    if (filters.dateFrom && d < filters.dateFrom) return false;
+                    if (filters.dateTo && d > filters.dateTo) return false;
+                    return true;
                 });
             }
 
@@ -253,27 +255,14 @@ window.api = {
             const activeOrders = allOrders.filter(o => o.status !== 'delivered');
             const deliveredToday = allOrders.filter(o => o.delivered_date && getLocalString(o.delivered_date) === today);
             
+            // Ingreso de hoy por fecha de recepción (mismo criterio que Reportes y
+            // que la versión PC): pagado -> total; parcial -> adelanto; pendiente -> 0.
+            // Antes se usaba created_at/updated_at, lo que inflaba el ingreso del día
+            // con solo cambiar el estado de un pedido viejo ya pagado.
             let income = 0;
-            allOrders.forEach(o => {
-                const createdDate = o.created_at ? getLocalString(o.created_at) : '';
-                const updatedDate = o.updated_at ? getLocalString(o.updated_at) : (o.delivered_date ? getLocalString(o.delivered_date) : '');
-                
-                const finalAmount = parseFloat(o.final_amount) || 0;
-                const advance = parseFloat(o.advance_payment) || 0;
-
-                if (o.payment_status === 'paid') {
-                    if (createdDate === today && updatedDate === today) {
-                        income += finalAmount;
-                    } else if (createdDate === today) {
-                        income += advance;
-                    } else if (updatedDate === today) {
-                        income += finalAmount - advance;
-                    }
-                } else if (o.payment_status === 'partial' && createdDate === today) {
-                    income += advance;
-                } else if (!o.payment_status && o.status === 'delivered' && updatedDate === today) {
-                    income += finalAmount;
-                }
+            todayOrders.forEach(o => {
+                if (o.payment_status === 'paid') income += parseFloat(o.final_amount) || 0;
+                else if (o.payment_status === 'partial') income += parseFloat(o.advance_payment) || 0;
             });
 
             return {
@@ -388,11 +377,15 @@ window.api = {
                         await db.license.update(1, { last_validated: getNow() });
                         return { valid: true };
                     }
+                    // El servidor respondió no-OK (ej. límite de tasa): gracia offline.
+                    return { valid: lic.status === 'active', reason: lic.status === 'active' ? '' : 'suspended' };
                 } catch (e) {
-                    return { valid: false, reason: 'no-internet' };
+                    // Sin internet: GRACIA. No se bloquea a un cliente con licencia
+                    // local activa solo por no tener conexión (igual que en PC).
+                    return { valid: lic.status === 'active', reason: lic.status === 'active' ? '' : 'no-internet' };
                 }
             }
-            
+
             return { valid: lic.status === 'active', reason: lic.status === 'active' ? '' : 'suspended' };
         }),
         validate: () => window.api.license.getStatus(),
@@ -433,7 +426,13 @@ window.api = {
         }),
         minimize: () => wrap(() => { /* No-op in mobile */ }),
         maximize: () => wrap(() => { /* No-op in mobile */ }),
-        isMaximized: () => wrap(() => true)
+        isMaximized: () => wrap(() => true),
+        relaunch: () => wrap(() => { window.location.reload(); }),
+        close: () => wrap(() => {
+            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+                window.Capacitor.Plugins.App.exitApp();
+            }
+        })
     }
 };
 

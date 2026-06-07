@@ -100,17 +100,17 @@ window.reportsPage = {
     const today = new Date();
     
     if (this.currentPeriod === 'daily') {
-      container.innerHTML = `<input type="date" id="repDate" class="form-input" value="${today.toISOString().split('T')[0]}">`;
+      container.innerHTML = `<input type="date" id="repDate" class="form-input" value="${format.localDateStr(today)}">`;
     } else if (this.currentPeriod === 'weekly') {
       // Get monday of current week
       const d = new Date(today);
       const day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6:1); // adjust when day is sunday
       d.setDate(diff);
-      const startOfWeek = d.toISOString().split('T')[0];
-      
+      const startOfWeek = format.localDateStr(d);
+
       const endOfWeekObj = new Date(d);
       endOfWeekObj.setDate(endOfWeekObj.getDate() + 6);
-      const endOfWeek = endOfWeekObj.toISOString().split('T')[0];
+      const endOfWeek = format.localDateStr(endOfWeekObj);
 
       container.innerHTML = `
         <div class="flex-align gap-2">
