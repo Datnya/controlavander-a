@@ -17,6 +17,12 @@
       "client_name": "Demo del proveedor (Yamil) - PC",
       "activated_device": "",
       "status": "active"
+    },
+    {
+      "code": "PRUEBA-PC-2026",
+      "client_name": "Demo PC del proveedor (reactivado)",
+      "activated_device": "",
+      "status": "active"
     }
   ]
 }
