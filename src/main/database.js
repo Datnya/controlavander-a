@@ -103,6 +103,14 @@ function createTables() {
   } catch (e) {
     // Si la columna ya existe, SQLite lanzará un error que podemos ignorar
   }
+  // Fecha de cobro completo (para filtrar/contar ingresos por fecha de pago)
+  try {
+    db.exec("ALTER TABLE orders ADD COLUMN payment_date DATETIME");
+    // Backfill: pedidos ya pagados toman su fecha de recepción como fecha de cobro
+    db.exec("UPDATE orders SET payment_date = received_date WHERE payment_status = 'paid' AND payment_date IS NULL");
+  } catch (e) {
+    // Columna ya existe
+  }
 }
 
 /**
@@ -295,8 +303,8 @@ function createOrder(data) {
   const result = db.prepare(`
     INSERT INTO orders (order_number, client_id, service_id, weight_kg, garment_count,
       garment_detail, garment_observations, special_services, status, base_amount,
-      discount, final_amount, estimated_delivery, notes, payment_status, advance_payment)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'received', ?, ?, ?, ?, ?, ?, ?)
+      discount, final_amount, estimated_delivery, notes, payment_status, advance_payment, payment_date)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'received', ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'paid' THEN datetime('now','localtime') ELSE NULL END)
   `).run(
     orderNumber, data.client_id, data.service_id,
     data.weight_kg || 0, data.garment_count || 0,
@@ -304,7 +312,8 @@ function createOrder(data) {
     data.special_services || '', data.base_amount,
     data.discount || 0, data.final_amount,
     data.estimated_delivery || null, data.notes || '',
-    data.payment_status || 'pending', data.advance_payment || 0
+    data.payment_status || 'pending', data.advance_payment || 0,
+    data.payment_status || 'pending'
   );
   return getOrderById(result.lastInsertRowid);
 }
@@ -315,14 +324,16 @@ function updateOrder(id, data) {
       garment_detail = ?, garment_observations = ?, special_services = ?,
       base_amount = ?, discount = ?, final_amount = ?, estimated_delivery = ?, notes = ?,
       payment_status = ?, advance_payment = ?,
+      payment_date = CASE WHEN ? = 'paid' THEN COALESCE(payment_date, datetime('now','localtime')) ELSE payment_date END,
       updated_at = datetime('now','localtime')
     WHERE id = ?
   `).run(
     data.client_id, data.service_id, data.weight_kg || 0, data.garment_count || 0,
     data.garment_detail || '', data.garment_observations || '',
     data.special_services || '', data.base_amount, data.discount || 0,
-    data.final_amount, data.estimated_delivery || null, data.notes || '', 
-    data.payment_status || 'pending', data.advance_payment || 0, id
+    data.final_amount, data.estimated_delivery || null, data.notes || '',
+    data.payment_status || 'pending', data.advance_payment || 0,
+    data.payment_status || 'pending', id
   );
   return getOrderById(id);
 }
@@ -458,95 +469,45 @@ function getDashboardStats() {
   };
 }
 
-function getDailySummary(date) {
-  const summary = db.prepare(`
-    SELECT 
-      COUNT(*) as total_orders,
-      COUNT(DISTINCT client_id) as unique_clients,
-      COALESCE(SUM(
-        CASE 
-          WHEN payment_status = 'paid' THEN final_amount
-          WHEN payment_status = 'partial' THEN advance_payment
-          ELSE 0
-        END
-      ), 0) as total_income
-    FROM orders WHERE DATE(received_date) = ?
-  `).get(date);
-
-  const services_breakdown = db.prepare(`
-    SELECT s.name as service_name, COUNT(*) as order_count,
-    COALESCE(SUM(
-      CASE 
-        WHEN payment_status = 'paid' THEN final_amount
-        WHEN payment_status = 'partial' THEN advance_payment
-        ELSE 0
-      END
-    ), 0) as total_amount
-    FROM orders o
-    JOIN services s ON o.service_id = s.id
-    WHERE DATE(o.received_date) = ?
-    GROUP BY s.id
-    ORDER BY total_amount DESC
-  `).all(date);
-
-  return { 
-    total_income: summary.total_income,
-    total_orders: summary.total_orders,
-    unique_clients: summary.unique_clients,
-    income_by_date: [{ date, total_orders: summary.total_orders, total: summary.total_income }],
-    services_breakdown
-  };
+// Helpers para elegir la BASE de fecha del reporte: 'reception' (cuándo se
+// recibió la ropa; pagado->total, parcial->adelanto) o 'payment' (cuándo se
+// cobró por completo; solo cuenta pedidos pagados, en su fecha de cobro).
+function _reportDateCol(basis) {
+  return basis === 'payment' ? 'payment_date' : 'received_date';
+}
+function _reportIncomeExpr(basis) {
+  if (basis === 'payment') {
+    return "CASE WHEN payment_status = 'paid' THEN final_amount ELSE 0 END";
+  }
+  return "CASE WHEN payment_status = 'paid' THEN final_amount WHEN payment_status = 'partial' THEN advance_payment ELSE 0 END";
 }
 
-function getWeeklySummary(startDate, endDate) {
+function _summaryByRange(startDate, endDate, basis) {
+  const col = _reportDateCol(basis);
+  const inc = _reportIncomeExpr(basis);
+
   const summary = db.prepare(`
-    SELECT 
-      COUNT(*) as total_orders,
-      COUNT(DISTINCT client_id) as unique_clients,
-      COALESCE(SUM(
-        CASE 
-          WHEN payment_status = 'paid' THEN final_amount
-          WHEN payment_status = 'partial' THEN advance_payment
-          ELSE 0
-        END
-      ), 0) as total_income
-    FROM orders WHERE DATE(received_date) BETWEEN ? AND ?
+    SELECT COUNT(*) as total_orders, COUNT(DISTINCT client_id) as unique_clients,
+           COALESCE(SUM(${inc}), 0) as total_income
+    FROM orders WHERE DATE(${col}) BETWEEN ? AND ?
   `).get(startDate, endDate);
 
   const income_by_date = db.prepare(`
-    SELECT 
-      DATE(received_date) as date,
-      COUNT(*) as total_orders,
-      COALESCE(SUM(
-        CASE 
-          WHEN payment_status = 'paid' THEN final_amount
-          WHEN payment_status = 'partial' THEN advance_payment
-          ELSE 0
-        END
-      ), 0) as total
-    FROM orders 
-    WHERE DATE(received_date) BETWEEN ? AND ?
-    GROUP BY DATE(received_date)
-    ORDER BY date ASC
+    SELECT DATE(${col}) as date, COUNT(*) as total_orders,
+           COALESCE(SUM(${inc}), 0) as total
+    FROM orders WHERE DATE(${col}) BETWEEN ? AND ?
+    GROUP BY DATE(${col}) ORDER BY date ASC
   `).all(startDate, endDate);
 
   const services_breakdown = db.prepare(`
     SELECT s.name as service_name, COUNT(*) as order_count,
-    COALESCE(SUM(
-      CASE 
-        WHEN payment_status = 'paid' THEN final_amount
-        WHEN payment_status = 'partial' THEN advance_payment
-        ELSE 0
-      END
-    ), 0) as total_amount
-    FROM orders o
-    JOIN services s ON o.service_id = s.id
-    WHERE DATE(o.received_date) BETWEEN ? AND ?
-    GROUP BY s.id
-    ORDER BY total_amount DESC
+           COALESCE(SUM(${inc}), 0) as total_amount
+    FROM orders o JOIN services s ON o.service_id = s.id
+    WHERE DATE(o.${col}) BETWEEN ? AND ?
+    GROUP BY s.id ORDER BY total_amount DESC
   `).all(startDate, endDate);
 
-  return { 
+  return {
     total_income: summary.total_income,
     total_orders: summary.total_orders,
     unique_clients: summary.unique_clients,
@@ -555,66 +516,23 @@ function getWeeklySummary(startDate, endDate) {
   };
 }
 
-function getMonthlySummary(year, month) {
+function getDailySummary(date, basis = 'reception') {
+  const res = _summaryByRange(date, date, basis);
+  // Para el día, asegurar una sola barra en el gráfico aunque no haya pedidos.
+  res.income_by_date = [{ date, total_orders: res.total_orders, total: res.total_income }];
+  return res;
+}
+
+function getWeeklySummary(startDate, endDate, basis = 'reception') {
+  return _summaryByRange(startDate, endDate, basis);
+}
+
+function getMonthlySummary(year, month, basis = 'reception') {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
   // Último día real del mes (28/29/30/31), no siempre 31.
   const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
   const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-
-  const summary = db.prepare(`
-    SELECT 
-      COUNT(*) as total_orders,
-      COUNT(DISTINCT client_id) as unique_clients,
-      COALESCE(SUM(
-        CASE 
-          WHEN payment_status = 'paid' THEN final_amount
-          WHEN payment_status = 'partial' THEN advance_payment
-          ELSE 0
-        END
-      ), 0) as total_income
-    FROM orders WHERE DATE(received_date) BETWEEN ? AND ?
-  `).get(startDate, endDate);
-
-  const income_by_date = db.prepare(`
-    SELECT 
-      DATE(received_date) as date,
-      COUNT(*) as total_orders,
-      COALESCE(SUM(
-        CASE 
-          WHEN payment_status = 'paid' THEN final_amount
-          WHEN payment_status = 'partial' THEN advance_payment
-          ELSE 0
-        END
-      ), 0) as total
-    FROM orders 
-    WHERE DATE(received_date) BETWEEN ? AND ?
-    GROUP BY DATE(received_date)
-    ORDER BY date ASC
-  `).all(startDate, endDate);
-
-  const services_breakdown = db.prepare(`
-    SELECT s.name as service_name, COUNT(*) as order_count,
-    COALESCE(SUM(
-      CASE 
-        WHEN payment_status = 'paid' THEN final_amount
-        WHEN payment_status = 'partial' THEN advance_payment
-        ELSE 0
-      END
-    ), 0) as total_amount
-    FROM orders o
-    JOIN services s ON o.service_id = s.id
-    WHERE DATE(o.received_date) BETWEEN ? AND ?
-    GROUP BY s.id
-    ORDER BY total_amount DESC
-  `).all(startDate, endDate);
-
-  return { 
-    total_income: summary.total_income,
-    total_orders: summary.total_orders,
-    unique_clients: summary.unique_clients,
-    income_by_date,
-    services_breakdown
-  };
+  return _summaryByRange(startDate, endDate, basis);
 }
 
 function getIncomeByDateRange(startDate, endDate) {
@@ -677,6 +595,20 @@ function deleteOrder(id) {
   return result.changes > 0;
 }
 
+/**
+ * Vacía el historial: borra pedidos ENTREGADOS (nunca los que siguen activos en
+ * servicio). Si se pasa { from, to } limita el borrado a ese rango de fechas de
+ * recepción; sin rango, borra todos los entregados.
+ */
+function clearOrders(filters = {}) {
+  let query = "DELETE FROM orders WHERE status = 'delivered'";
+  const params = [];
+  if (filters.from) { query += " AND DATE(received_date) >= ?"; params.push(filters.from); }
+  if (filters.to) { query += " AND DATE(received_date) <= ?"; params.push(filters.to); }
+  const result = db.prepare(query).run(...params);
+  return result.changes;
+}
+
 module.exports = {
   initDatabase, getDatabase,
   // Clientes
@@ -685,7 +617,7 @@ module.exports = {
   getAllServices, getActiveServices, createService, updateService, toggleServiceActive,
   // Pedidos
   getNextOrderNumber, getAllOrders, getOrderById, createOrder, updateOrder, updateOrderStatus,
-  getOrdersByClient, getActiveOrders, getTodayOrders, clearOldOrders, deleteOrder,
+  getOrdersByClient, getActiveOrders, getTodayOrders, clearOldOrders, deleteOrder, clearOrders,
   // Configuración
   getSetting, getAllSettings, setSetting, getBulkSettings,
   // Reportes

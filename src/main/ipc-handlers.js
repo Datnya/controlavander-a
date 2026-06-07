@@ -147,18 +147,18 @@ function registerIpcHandlers() {
     catch (e) { return { success: false, error: e.message }; }
   });
 
-  ipcMain.handle('reports:getDailySummary', async (_, date) => {
-    try { return { success: true, data: db.getDailySummary(date) }; }
+  ipcMain.handle('reports:getDailySummary', async (_, date, basis) => {
+    try { return { success: true, data: db.getDailySummary(date, basis) }; }
     catch (e) { return { success: false, error: e.message }; }
   });
 
-  ipcMain.handle('reports:getWeeklySummary', async (_, startDate, endDate) => {
-    try { return { success: true, data: db.getWeeklySummary(startDate, endDate) }; }
+  ipcMain.handle('reports:getWeeklySummary', async (_, startDate, endDate, basis) => {
+    try { return { success: true, data: db.getWeeklySummary(startDate, endDate, basis) }; }
     catch (e) { return { success: false, error: e.message }; }
   });
 
-  ipcMain.handle('reports:getMonthlySummary', async (_, year, month) => {
-    try { return { success: true, data: db.getMonthlySummary(year, month) }; }
+  ipcMain.handle('reports:getMonthlySummary', async (_, year, month, basis) => {
+    try { return { success: true, data: db.getMonthlySummary(year, month, basis) }; }
     catch (e) { return { success: false, error: e.message }; }
   });
 
@@ -190,6 +190,15 @@ function registerIpcHandlers() {
   ipcMain.handle('reports:clearOld', async () => {
     try {
       const count = db.clearOldOrders();
+      return { success: true, count };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle('reports:clearOrders', async (_, filters) => {
+    try {
+      const count = db.clearOrders(filters || {});
       return { success: true, count };
     } catch (e) {
       return { success: false, error: e.message };

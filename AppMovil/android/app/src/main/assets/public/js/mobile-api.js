@@ -122,14 +122,17 @@ window.api = {
             return order;
         }),
         create: (data) => wrap(async () => {
-            const id = await db.orders.add({ 
-                ...data, 
-                created_at: getNow(), 
-                updated_at: getNow() 
-            });
+            const rec = { ...data, created_at: getNow(), updated_at: getNow() };
+            // Fecha de cobro completo (para reportes por fecha de pago)
+            if (data.payment_status === 'paid' && !rec.payment_date) rec.payment_date = getNow();
+            const id = await db.orders.add(rec);
             return id;
         }),
-        update: (id, data) => wrap(() => db.orders.update(id, { ...data, updated_at: getNow() })),
+        update: (id, data) => wrap(() => {
+            const patch = { ...data, updated_at: getNow() };
+            if (data.payment_status === 'paid' && !patch.payment_date) patch.payment_date = getNow();
+            return db.orders.update(id, patch);
+        }),
         updateStatus: (id, status) => wrap(async () => {
             const updateData = { status, updated_at: getNow() };
             if (status === 'delivered') updateData.delivered_date = getNow();
@@ -198,13 +201,17 @@ window.api = {
     },
 
     reports: {
-        _generateReportSummary: async (isDateInRange) => {
+        _generateReportSummary: async (isDateInRange, basis) => {
             const allOrders = await db.orders.toArray();
             const services = await db.services.toArray();
             const servicesDict = Object.fromEntries(services.map(s => [s.id, s.name]));
 
-            // Ingreso reconocido por pedido: pagado -> total; parcial -> adelanto; pendiente -> 0
+            // basis 'payment' -> por fecha de cobro (solo pagados, monto total).
+            // basis 'reception' (por defecto) -> por fecha de recepción
+            //   (pagado -> total; parcial -> adelanto; pendiente -> 0).
+            const dateFieldOf = (o) => basis === 'payment' ? o.payment_date : o.received_date;
             const incomeOf = (o) => {
+                if (basis === 'payment') return o.payment_status === 'paid' ? (parseFloat(o.final_amount) || 0) : 0;
                 if (o.payment_status === 'paid') return parseFloat(o.final_amount) || 0;
                 if (o.payment_status === 'partial') return parseFloat(o.advance_payment) || 0;
                 return 0;
@@ -217,8 +224,9 @@ window.api = {
             const serviceMap = {};     // service_id -> { revenue, count }
 
             allOrders.forEach(o => {
-                if (!o.received_date) return;
-                const date = getLocalString(o.received_date);
+                const df = dateFieldOf(o);
+                if (!df) return;
+                const date = getLocalString(df);
                 if (!isDateInRange(date)) return;
 
                 const income = incomeOf(o);
@@ -276,18 +284,18 @@ window.api = {
                 delivered_today: deliveredToday.length
             };
         }),
-        getDailySummary: (date) => wrap(async () => {
-            return await window.api.reports._generateReportSummary(d => d === date);
+        getDailySummary: (date, basis) => wrap(async () => {
+            return await window.api.reports._generateReportSummary(d => d === date, basis);
         }),
-        getWeeklySummary: (start, end) => wrap(async () => {
-            return await window.api.reports._generateReportSummary(d => d >= start && d <= end);
+        getWeeklySummary: (start, end, basis) => wrap(async () => {
+            return await window.api.reports._generateReportSummary(d => d >= start && d <= end, basis);
         }),
-        getMonthlySummary: (year, month) => wrap(async () => {
+        getMonthlySummary: (year, month, basis) => wrap(async () => {
             const prefix = `${year}-${String(month).padStart(2, '0')}`;
-            return await window.api.reports._generateReportSummary(d => d.startsWith(prefix));
+            return await window.api.reports._generateReportSummary(d => d.startsWith(prefix), basis);
         }),
-        getIncomeByDateRange: (start, end) => wrap(async () => {
-            return await window.api.reports._generateReportSummary(d => d >= start && d <= end);
+        getIncomeByDateRange: (start, end, basis) => wrap(async () => {
+            return await window.api.reports._generateReportSummary(d => d >= start && d <= end, basis);
         }),
         exportCSV: async (csvData, filename) => wrap(async () => {
             try {
@@ -314,6 +322,23 @@ window.api = {
                 await db.orders.bulkDelete(ids);
             }
             return { count: oldOrders.length };
+        }),
+        // Vacía el historial: borra pedidos ENTREGADOS (nunca los activos en
+        // servicio). Con { from, to } limita por fecha de recepción; sin rango,
+        // borra todos los entregados.
+        clearOrders: (filters = {}) => wrap(async () => {
+            const toDelete = await db.orders.filter(o => {
+                if (o.status !== 'delivered') return false;
+                if (filters.from || filters.to) {
+                    const d = o.received_date ? o.received_date.split('T')[0] : '';
+                    if (filters.from && d < filters.from) return false;
+                    if (filters.to && d > filters.to) return false;
+                }
+                return true;
+            }).toArray();
+            const ids = toDelete.map(o => o.id);
+            if (ids.length) await db.orders.bulkDelete(ids);
+            return { count: ids.length };
         })
     },
 

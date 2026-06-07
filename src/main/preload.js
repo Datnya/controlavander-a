@@ -47,12 +47,13 @@ contextBridge.exposeInMainWorld('api', {
   // ==================== REPORTES ====================
   reports: {
     getDashboardStats: () => ipcRenderer.invoke('reports:getDashboardStats'),
-    getDailySummary: (date) => ipcRenderer.invoke('reports:getDailySummary', date),
-    getWeeklySummary: (startDate, endDate) => ipcRenderer.invoke('reports:getWeeklySummary', startDate, endDate),
-    getMonthlySummary: (year, month) => ipcRenderer.invoke('reports:getMonthlySummary', year, month),
+    getDailySummary: (date, basis) => ipcRenderer.invoke('reports:getDailySummary', date, basis),
+    getWeeklySummary: (startDate, endDate, basis) => ipcRenderer.invoke('reports:getWeeklySummary', startDate, endDate, basis),
+    getMonthlySummary: (year, month, basis) => ipcRenderer.invoke('reports:getMonthlySummary', year, month, basis),
     getIncomeByDateRange: (startDate, endDate) => ipcRenderer.invoke('reports:getIncomeByDateRange', startDate, endDate),
     exportCSV: (data, filename) => ipcRenderer.invoke('reports:exportCSV', data, filename),
     clearOld: () => ipcRenderer.invoke('reports:clearOld'),
+    clearOrders: (filters) => ipcRenderer.invoke('reports:clearOrders', filters),
   },
 
   // ==================== LICENCIA ====================

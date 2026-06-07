@@ -1,6 +1,7 @@
 window.reportsPage = {
   currentPeriod: 'monthly', // daily, weekly, monthly
   data: null,
+  dateBasis: 'reception', // 'reception' (fecha de recepción) | 'payment' (fecha de cobro)
   historyExpanded: false,
   historyRange: null, // { from, to } del periodo seleccionado
 
@@ -17,15 +18,24 @@ window.reportsPage = {
             <!-- Los controles cambiarán según el periodo -->
           </div>
         </div>
-        <div class="flex-align" style="margin-top: 24px; justify-content: flex-end; gap: 24px;">
-          <button class="btn btn-secondary btn-sm" onclick="reportsPage.showExportModal()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Exportar
-          </button>
-          <button class="btn btn-danger btn-sm" onclick="reportsPage.clearHistory()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-            Vaciar Historial
-          </button>
+        <div class="flex-between align-center" style="margin-top: 24px; flex-wrap: wrap; gap: 12px;">
+          <div class="flex-align gap-2">
+            <span class="text-sm text-gray-500">Ingresos por:</span>
+            <div class="tab-pills" id="basisTabs">
+              <div class="tab-pill active" data-basis="reception">Recepción</div>
+              <div class="tab-pill" data-basis="payment">Cobro</div>
+            </div>
+          </div>
+          <div class="flex-align gap-3">
+            <button class="btn btn-secondary btn-sm" onclick="reportsPage.showExportModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Exportar
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="reportsPage.clearHistory()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              Vaciar Historial
+            </button>
+          </div>
         </div>
       </div>
 
@@ -141,6 +151,16 @@ window.reportsPage = {
       });
     });
 
+    // Selector de base de fecha: Recepción vs Cobro
+    document.querySelectorAll('#basisTabs .tab-pill').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        document.querySelectorAll('#basisTabs .tab-pill').forEach(t => t.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+        this.dateBasis = e.currentTarget.dataset.basis;
+        this.loadData();
+      });
+    });
+
     this.bindControlEvents();
   },
 
@@ -161,17 +181,17 @@ window.reportsPage = {
       
       if (this.currentPeriod === 'daily') {
         const date = document.getElementById('repDate').value;
-        res = await window.api.reports.getDailySummary(date);
+        res = await window.api.reports.getDailySummary(date, this.dateBasis);
         this.historyRange = { from: date, to: date };
       } else if (this.currentPeriod === 'weekly') {
         const start = document.getElementById('repWeekStart').value;
         const end = document.getElementById('repWeekEnd').value;
-        res = await window.api.reports.getWeeklySummary(start, end);
+        res = await window.api.reports.getWeeklySummary(start, end, this.dateBasis);
         this.historyRange = { from: start, to: end };
       } else if (this.currentPeriod === 'monthly') {
         const monthVal = document.getElementById('repMonth').value;
         const parts = monthVal.split('-');
-        res = await window.api.reports.getMonthlySummary(parts[0], parts[1]);
+        res = await window.api.reports.getMonthlySummary(parts[0], parts[1], this.dateBasis);
         const lastDay = new Date(parseInt(parts[0]), parseInt(parts[1]), 0).getDate();
         this.historyRange = { from: `${parts[0]}-${parts[1]}-01`, to: `${parts[0]}-${parts[1]}-${String(lastDay).padStart(2, '0')}` };
       }
@@ -387,24 +407,52 @@ window.reportsPage = {
     }
   },
 
-  async clearHistory() {
-    modal.confirm(
-      'Vaciar Historial',
-      '¿Está seguro de eliminar permanentemente todos los pedidos que ya fueron entregados? Esta acción NO se puede deshacer y los datos eliminados no aparecerán en futuros reportes.',
-      async () => {
-        try {
-          const res = await window.api.reports.clearOld();
-          if (res.success) {
-            toast.success('Limpieza Completa', `Se eliminaron ${res.count} pedidos entregados.`);
-            this.loadData();
-          } else {
-            throw new Error(res.error);
-          }
-        } catch (e) {
-          toast.error('Error', 'No se pudo vaciar el historial');
-        }
-      },
-      'warning'
-    );
+  clearHistory() {
+    const periodLabel = { daily: 'el día', weekly: 'la semana', monthly: 'el mes' }[this.currentPeriod] || 'el periodo';
+    const r = this.historyRange;
+    const modalInstance = modal.show({
+      title: 'Vaciar Historial',
+      content: `
+        <p class="text-sm text-gray-600 mb-4">Se eliminan solo pedidos <b>entregados</b>. Los pedidos aún <b>activos en servicio NO se borran</b>. Esta acción no se puede deshacer.</p>
+        <div class="flex-col gap-3">
+          <button class="btn btn-secondary w-100" style="justify-content:center;" id="btnClearPeriod">Vaciar ${periodLabel} seleccionado</button>
+          <button class="btn btn-danger w-100" style="justify-content:center;" id="btnClearAll">Vaciar TODO el historial</button>
+        </div>
+      `,
+      size: 'sm',
+      showFooter: false
+    });
+
+    setTimeout(() => {
+      const periodBtn = document.getElementById('btnClearPeriod');
+      if (periodBtn) periodBtn.addEventListener('click', () => {
+        modalInstance.close();
+        this._doClear(r ? { from: r.from, to: r.to } : {});
+      });
+      const allBtn = document.getElementById('btnClearAll');
+      if (allBtn) allBtn.addEventListener('click', () => {
+        modalInstance.close();
+        modal.confirm(
+          'Vaciar TODO el historial',
+          '¿Seguro? Se borrarán TODOS los pedidos entregados de todos los meses (los activos en servicio se mantienen). No se puede deshacer.',
+          () => this._doClear({}),
+          'danger'
+        );
+      });
+    }, 100);
+  },
+
+  async _doClear(filters) {
+    try {
+      const res = await window.api.reports.clearOrders(filters);
+      if (res.success) {
+        toast.success('Limpieza Completa', `Se eliminaron ${res.count} pedidos entregados.`);
+        this.loadData();
+      } else {
+        throw new Error(res.error);
+      }
+    } catch (e) {
+      toast.error('Error', 'No se pudo vaciar el historial');
+    }
   }
 };
