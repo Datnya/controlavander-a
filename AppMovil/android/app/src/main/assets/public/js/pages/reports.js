@@ -18,24 +18,22 @@ window.reportsPage = {
             <!-- Los controles cambiarán según el periodo -->
           </div>
         </div>
-        <div class="flex-between align-center" style="margin-top: 44px; flex-wrap: wrap; gap: 12px;">
-          <div class="flex-align gap-2">
-            <span class="text-sm text-gray-500">Ingresos por:</span>
-            <div class="tab-pills" id="basisTabs">
-              <div class="tab-pill active" data-basis="reception">Recepción</div>
-              <div class="tab-pill" data-basis="payment">Cobro</div>
-            </div>
+        <div class="flex-align gap-2" style="margin-top: 28px;">
+          <span class="text-sm text-gray-500">Ingresos por:</span>
+          <div class="tab-pills" id="basisTabs">
+            <div class="tab-pill active" data-basis="reception">Recepción</div>
+            <div class="tab-pill" data-basis="payment">Cobro</div>
           </div>
-          <div class="flex-align gap-3">
-            <button class="btn btn-secondary btn-sm" onclick="reportsPage.showExportModal()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Exportar
-            </button>
-            <button class="btn btn-danger btn-sm" onclick="reportsPage.clearHistory()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-              Vaciar Historial
-            </button>
-          </div>
+        </div>
+        <div class="flex-align gap-3" style="margin-top: 28px; justify-content: flex-end; flex-wrap: wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="reportsPage.showExportModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="reportsPage.clearHistory()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            Vaciar Historial
+          </button>
         </div>
       </div>
 
