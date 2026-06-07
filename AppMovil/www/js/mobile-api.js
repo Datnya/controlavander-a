@@ -36,6 +36,29 @@ const getLocalString = (dateString) => {
     return d.toISOString().split('T')[0];
 };
 
+// Helpers para la tendencia del gráfico (5 semanas / 5 meses)
+const _pad2m = (n) => String(n).padStart(2, '0');
+const _localStrM = (d) => `${d.getFullYear()}-${_pad2m(d.getMonth() + 1)}-${_pad2m(d.getDate())}`;
+const _MESES_M = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const _incomeOfBasis = (o, basis) => {
+    if (basis === 'payment') return o.payment_status === 'paid' ? (parseFloat(o.final_amount) || 0) : 0;
+    if (o.payment_status === 'paid') return parseFloat(o.final_amount) || 0;
+    if (o.payment_status === 'partial') return parseFloat(o.advance_payment) || 0;
+    return 0;
+};
+const _incomeForRange = (allOrders, from, to, basis) => {
+    let total = 0, count = 0;
+    allOrders.forEach(o => {
+        const df = basis === 'payment' ? o.payment_date : o.received_date;
+        if (!df) return;
+        const d = getLocalString(df);
+        if (d < from || d > to) return;
+        total += _incomeOfBasis(o, basis);
+        count += 1;
+    });
+    return { total, total_orders: count };
+};
+
 // Wrapper para simular el comportamiento de IPC (async y retorna {success, data} o {success, error})
 const wrap = async (fn) => {
     try {
@@ -288,11 +311,38 @@ window.api = {
             return await window.api.reports._generateReportSummary(d => d === date, basis);
         }),
         getWeeklySummary: (start, end, basis) => wrap(async () => {
-            return await window.api.reports._generateReportSummary(d => d >= start && d <= end, basis);
+            const base = await window.api.reports._generateReportSummary(d => d >= start && d <= end, basis);
+            // Gráfico: tendencia de 5 semanas (4 anteriores + la actual).
+            const all = await db.orders.toArray();
+            const s = new Date(start + 'T00:00:00'), e = new Date(end + 'T00:00:00');
+            const buckets = [];
+            for (let k = 4; k >= 0; k--) {
+                const ws = new Date(s); ws.setDate(ws.getDate() - 7 * k);
+                const we = new Date(e); we.setDate(we.getDate() - 7 * k);
+                const r = _incomeForRange(all, _localStrM(ws), _localStrM(we), basis);
+                buckets.push({ date: _localStrM(ws), label: `${_pad2m(ws.getDate())}/${_pad2m(ws.getMonth() + 1)}`, total: r.total, total_orders: r.total_orders });
+            }
+            base.income_by_date = buckets;
+            return base;
         }),
         getMonthlySummary: (year, month, basis) => wrap(async () => {
-            const prefix = `${year}-${String(month).padStart(2, '0')}`;
-            return await window.api.reports._generateReportSummary(d => d.startsWith(prefix), basis);
+            const y = parseInt(year), m = parseInt(month);
+            const prefix = `${year}-${_pad2m(m)}`;
+            const base = await window.api.reports._generateReportSummary(d => d.startsWith(prefix), basis);
+            // Gráfico: tendencia de 5 meses (4 anteriores + el actual).
+            const all = await db.orders.toArray();
+            const buckets = [];
+            for (let k = 4; k >= 0; k--) {
+                const d = new Date(y, m - 1 - k, 1);
+                const by = d.getFullYear(), bm = d.getMonth() + 1;
+                const from = `${by}-${_pad2m(bm)}-01`;
+                const ld = new Date(by, bm, 0).getDate();
+                const to = `${by}-${_pad2m(bm)}-${_pad2m(ld)}`;
+                const r = _incomeForRange(all, from, to, basis);
+                buckets.push({ date: from, label: `${_MESES_M[bm - 1]} ${String(by).slice(2)}`, total: r.total, total_orders: r.total_orders });
+            }
+            base.income_by_date = buckets;
+            return base;
         }),
         getIncomeByDateRange: (start, end, basis) => wrap(async () => {
             return await window.api.reports._generateReportSummary(d => d >= start && d <= end, basis);

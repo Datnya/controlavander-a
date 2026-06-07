@@ -18,7 +18,7 @@ window.reportsPage = {
             <!-- Los controles cambiarán según el periodo -->
           </div>
         </div>
-        <div class="flex-between align-center" style="margin-top: 24px; flex-wrap: wrap; gap: 12px;">
+        <div class="flex-between align-center" style="margin-top: 44px; flex-wrap: wrap; gap: 12px;">
           <div class="flex-align gap-2">
             <span class="text-sm text-gray-500">Ingresos por:</span>
             <div class="tab-pills" id="basisTabs">
@@ -65,6 +65,18 @@ window.reportsPage = {
         </div>
       </div>
 
+      <!-- Historial de pedidos del periodo (desplegable) -->
+      <div class="card mb-6">
+        <div class="flex-between align-center" style="cursor: pointer;" onclick="reportsPage.toggleHistory()">
+          <h3 class="font-semibold text-md flex-align gap-2" style="margin:0;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Historial de pedidos del periodo
+          </h3>
+          <svg id="histChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="transition: transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div id="historyContainer" style="display: none; margin-top: 16px;"></div>
+      </div>
+
       <div class="grid grid-3">
         <div class="card" style="grid-column: span 2;">
           <h3 class="font-semibold text-md mb-4">Evolución de Ingresos</h3>
@@ -83,18 +95,6 @@ window.reportsPage = {
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Historial de pedidos del periodo (desplegable) -->
-      <div class="card mt-6">
-        <div class="flex-between align-center" style="cursor: pointer;" onclick="reportsPage.toggleHistory()">
-          <h3 class="font-semibold text-md flex-align gap-2" style="margin:0;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Historial de pedidos del periodo
-          </h3>
-          <svg id="histChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="transition: transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div id="historyContainer" style="display: none; margin-top: 16px;"></div>
       </div>
     `;
   },
@@ -290,9 +290,9 @@ window.reportsPage = {
       // Calculate height percentage (min 2%)
       let heightPct = maxVal > 0 ? Math.max((item.total / maxVal) * 100, 2) : 2;
       
-      // Parse label depending on format
-      let label = item.date;
-      if (label.includes('-')) {
+      // Etiqueta: usa item.label si viene (semanas/meses); si no, DD/MM
+      let label = item.label || item.date;
+      if (!item.label && typeof label === 'string' && label.includes('-')) {
         const parts = label.split('-');
         label = `${parts[2]}/${parts[1]}`; // DD/MM
       }

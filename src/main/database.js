@@ -523,16 +523,55 @@ function getDailySummary(date, basis = 'reception') {
   return res;
 }
 
+function _pad2(n) { return String(n).padStart(2, '0'); }
+function _localStr(d) { return `${d.getFullYear()}-${_pad2(d.getMonth() + 1)}-${_pad2(d.getDate())}`; }
+const _MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+// Total de ingresos (según base) en un rango [from, to].
+function _incomeForRange(from, to, basis) {
+  const col = _reportDateCol(basis);
+  const inc = _reportIncomeExpr(basis);
+  const r = db.prepare(`SELECT COALESCE(SUM(${inc}), 0) as total, COUNT(*) as cnt FROM orders WHERE DATE(${col}) BETWEEN ? AND ?`).get(from, to);
+  return { total: r.total, total_orders: r.cnt };
+}
+
 function getWeeklySummary(startDate, endDate, basis = 'reception') {
-  return _summaryByRange(startDate, endDate, basis);
+  // Resumen (totales/servicios) de la semana seleccionada.
+  const base = _summaryByRange(startDate, endDate, basis);
+  // Gráfico: tendencia de 5 semanas (4 anteriores + la actual).
+  const s = new Date(startDate + 'T00:00:00');
+  const e = new Date(endDate + 'T00:00:00');
+  const buckets = [];
+  for (let k = 4; k >= 0; k--) {
+    const ws = new Date(s); ws.setDate(ws.getDate() - 7 * k);
+    const we = new Date(e); we.setDate(we.getDate() - 7 * k);
+    const r = _incomeForRange(_localStr(ws), _localStr(we), basis);
+    buckets.push({ date: _localStr(ws), label: `${_pad2(ws.getDate())}/${_pad2(ws.getMonth() + 1)}`, total: r.total, total_orders: r.total_orders });
+  }
+  base.income_by_date = buckets;
+  return base;
 }
 
 function getMonthlySummary(year, month, basis = 'reception') {
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  // Último día real del mes (28/29/30/31), no siempre 31.
-  const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-  return _summaryByRange(startDate, endDate, basis);
+  const y = parseInt(year), m = parseInt(month);
+  const startDate = `${year}-${_pad2(m)}-01`;
+  const lastDay = new Date(y, m, 0).getDate();
+  const endDate = `${year}-${_pad2(m)}-${_pad2(lastDay)}`;
+  // Resumen (totales/servicios) del mes seleccionado.
+  const base = _summaryByRange(startDate, endDate, basis);
+  // Gráfico: tendencia de 5 meses (4 anteriores + el actual).
+  const buckets = [];
+  for (let k = 4; k >= 0; k--) {
+    const d = new Date(y, m - 1 - k, 1);
+    const by = d.getFullYear(), bm = d.getMonth() + 1;
+    const from = `${by}-${_pad2(bm)}-01`;
+    const ld = new Date(by, bm, 0).getDate();
+    const to = `${by}-${_pad2(bm)}-${_pad2(ld)}`;
+    const r = _incomeForRange(from, to, basis);
+    buckets.push({ date: from, label: `${_MESES[bm - 1]} ${String(by).slice(2)}`, total: r.total, total_orders: r.total_orders });
+  }
+  base.income_by_date = buckets;
+  return base;
 }
 
 function getIncomeByDateRange(startDate, endDate) {
