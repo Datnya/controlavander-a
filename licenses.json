@@ -23,6 +23,12 @@
       "client_name": "Demo PC del proveedor (reactivado)",
       "activated_device": "",
       "status": "active"
+    },
+    {
+      "code": "CON-MOB-ZD1W-VQLV",
+      "client_name": "Lavandería \"El Sol Brillante\"",
+      "activated_device": "DEV-A7B8C9",
+      "status": "active"
     }
   ]
 }
