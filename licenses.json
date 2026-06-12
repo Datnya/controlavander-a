@@ -1,36 +1,6 @@
 {
   "licenses": [
     {
-      "code": "CLIENTE1-2024",
-      "client_name": "CLIENTE NRO 1",
-      "activated_device": "AQUI_VA_EL_ID_DEL_CLIENTE",
-      "status": "active"
-    },
-    {
-      "code": "FOXY-DEMO-YAMIL",
-      "client_name": "Demo del proveedor (Yamil) - Movil",
-      "activated_device": "MOB-TKZ74LVDT",
-      "status": "active"
-    },
-    {
-      "code": "FOXY-DEMO-PC",
-      "client_name": "Demo del proveedor (Yamil) - PC",
-      "activated_device": "",
-      "status": "active"
-    },
-    {
-      "code": "PRUEBA-PC-2026",
-      "client_name": "Demo PC del proveedor (reactivado)",
-      "activated_device": "",
-      "status": "active"
-    },
-    {
-      "code": "CON-MOB-ZD1W-VQLV",
-      "client_name": "Lavandería \"El Sol Brillante\"",
-      "activated_device": "DEV-A7B8C9",
-      "status": "active"
-    },
-    {
       "code": "CON-MOB-D9PB-3DZ9",
       "client_name": "Lavandería APM GROUP",
       "activated_device": "MOB-F0HCK7AWB",
