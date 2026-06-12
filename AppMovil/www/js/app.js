@@ -183,7 +183,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const status = await window.api.license.getStatus();
     if (!status.success || !status.data || !status.data.valid) {
-      window.location.href = 'activation.html';
+      if (status.data && status.data.reason === 'suspended') {
+        window.location.href = 'suspended.html';
+      } else {
+        window.location.href = 'activation.html';
+      }
       return;
     }
   } catch(e) {

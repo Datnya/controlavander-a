@@ -434,10 +434,10 @@ window.api = {
             const lic = await db.license.get(1);
             if (!lic) return { valid: false, reason: 'no-license' };
             
-            // Validar si pasaron 7 horas
+            // Validar si pasaron 7 horas o si está suspendida localmente
             const lastVal = new Date(lic.last_validated).getTime();
             const now = Date.now();
-            if (now - lastVal > 7 * 60 * 60 * 1000) {
+            if (lic.status === 'suspended' || now - lastVal > 7 * 60 * 60 * 1000) {
                 // Forzar revalidación online
                 try {
                     const res = await fetch('https://raw.githubusercontent.com/Datnya/controlavander-a/main/licenses.json?t=' + now);
@@ -446,10 +446,10 @@ window.api = {
                         const onlineLic = json.licenses.find(l => l.code === lic.code);
                         const deviceId = localStorage.getItem('lavanderia_device_id');
                         if (!onlineLic || onlineLic.status !== 'active' || onlineLic.activated_device !== deviceId) {
-                            await db.license.update(1, { status: 'suspended' });
+                            await db.license.update(1, { status: 'suspended', last_validated: getNow() });
                             return { valid: false, reason: 'suspended' };
                         }
-                        await db.license.update(1, { last_validated: getNow() });
+                        await db.license.update(1, { status: 'active', last_validated: getNow() });
                         return { valid: true };
                     }
                     // El servidor respondió no-OK (ej. límite de tasa): gracia offline.
@@ -457,7 +457,7 @@ window.api = {
                 } catch (e) {
                     // Sin internet: GRACIA. No se bloquea a un cliente con licencia
                     // local activa solo por no tener conexión (igual que en PC).
-                    return { valid: lic.status === 'active', reason: lic.status === 'active' ? '' : 'no-internet' };
+                    return { valid: lic.status === 'active', reason: lic.status === 'active' ? '' : (lic.status === 'suspended' ? 'suspended' : 'no-internet') };
                 }
             }
 
