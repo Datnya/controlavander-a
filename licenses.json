@@ -4,8 +4,8 @@
       "code": "CON-MOB-D9PB-3DZ9",
       "client_name": "Lavandería APM GROUP",
       "activated_device": "MOB-F0HCK7AWB",
-      "status": "suspended",
-      "isActive": false
+      "status": "active",
+      "isActive": true
     }
   ]
 }
