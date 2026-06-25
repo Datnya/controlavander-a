@@ -162,6 +162,9 @@
         if (status.success && status.data && status.data.valid) {
           window.location.href = 'index.html';
           return;
+        } else if (status.success && status.data && status.data.reason === 'suspended') {
+          window.location.href = 'suspended.html';
+          return;
         }
       } catch(e) {}
     })();

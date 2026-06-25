@@ -182,13 +182,24 @@ const app = {
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     const status = await window.api.license.getStatus();
-    if (!status.success || !status.data || !status.data.valid) {
-      window.location.href = 'activation.html';
+    if (!status.success) {
+      console.error("License check failed with error:", status.error);
+      // Fallback: Si falla la comprobación por un error interno, intentar iniciar
+      app.init();
+      return;
+    }
+    
+    if (!status.data || !status.data.valid) {
+      if (status.data && status.data.reason === 'suspended') {
+        window.location.href = 'blocked.html';
+      } else {
+        window.location.href = 'activation.html';
+      }
       return;
     }
   } catch(e) {
-    window.location.href = 'activation.html';
-    return;
+    console.error("Critical license check error:", e);
+    // No patear al usuario a activation por un error transitorio
   }
   app.init();
 });

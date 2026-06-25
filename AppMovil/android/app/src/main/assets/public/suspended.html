@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Licencia Suspendida</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0c1929 0%, #1a365d 50%, #0e4a8a 100%);
+      padding: 20px;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .suspended-card {
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      padding: 40px 24px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    .icon-container {
+      width: 80px;
+      height: 80px;
+      background: rgba(239, 68, 68, 0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      color: #ef4444;
+    }
+    .title {
+      color: white;
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 12px;
+    }
+    .message {
+      color: rgba(255,255,255,0.8);
+      font-size: 15px;
+      line-height: 1.5;
+      margin: 0 0 24px;
+    }
+    .spinner-sm {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+  <script src="./js/dexie.js"></script>
+  <script src="./js/mobile-api.js"></script>
+</head>
+<body>
+  <div class="suspended-card">
+    <div class="icon-container">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <h1 class="title">Licencia Suspendida</h1>
+    <p class="message">Tu acceso a la aplicación ha sido temporalmente bloqueado.<br><br>Por favor, comunícate con tu proveedor para regularizar el servicio.</p>
+    
+    <div style="margin-top: 30px; opacity: 0.5;">
+      <div class="spinner-sm"></div>
+      <div style="color: white; font-size: 12px;">Esperando activación...</div>
+    </div>
+  </div>
+
+  <script>
+    async function checkStatus() {
+      try {
+        const status = await window.api.license.getStatus();
+        if (status.success && status.data && status.data.valid) {
+          window.location.href = 'index.html';
+        } else if (status.success && status.data && status.data.reason === 'no-license') {
+          window.location.href = 'activation.html';
+        }
+      } catch (e) {
+        console.error("Error comprobando estado", e);
+      }
+    }
+
+    // Comprobar al iniciar
+    checkStatus();
+    
+    // Comprobar silenciosamente cada 10 segundos
+    setInterval(checkStatus, 10000);
+  </script>
+</body>
+</html>

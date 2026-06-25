@@ -434,32 +434,33 @@ window.api = {
             const lic = await db.license.get(1);
             if (!lic) return { valid: false, reason: 'no-license' };
             
-            // SIEMPRE intentar verificar online contra GitHub
-            try {
-                const res = await fetch('https://raw.githubusercontent.com/Datnya/controlavander-a/main/licenses.json?t=' + Date.now());
-                if (res.ok) {
-                    const json = await res.json();
-                    const onlineLic = json.licenses.find(l => l.code === lic.code);
-                    const deviceId = localStorage.getItem('lavanderia_device_id');
-                    if (!onlineLic || onlineLic.status !== 'active' || onlineLic.activated_device !== deviceId) {
-                        await db.license.update(1, { status: 'suspended', last_validated: getNow() });
-                        return { valid: false, reason: 'suspended' };
-                    }
-                    await db.license.update(1, { status: 'active', last_validated: getNow() });
-                    return { valid: true };
-                }
-            } catch (e) {
-                // Sin internet: usar caché local con gracia
-            }
-
-            // FALLBACK OFFLINE: si no hay internet, usar datos locales
+            // Validar si pasaron 7 horas
             const lastVal = new Date(lic.last_validated).getTime();
             const now = Date.now();
-            // Si pasaron más de 7 horas sin validar online, bloquear
             if (now - lastVal > 7 * 60 * 60 * 1000) {
-                return { valid: false, reason: lic.status === 'suspended' ? 'suspended' : 'no-internet' };
+                // Forzar revalidación online
+                try {
+                    const res = await fetch('https://raw.githubusercontent.com/Datnya/controlavander-a/main/licenses.json?t=' + now);
+                    if (res.ok) {
+                        const json = await res.json();
+                        const onlineLic = json.licenses.find(l => l.code === lic.code);
+                        const deviceId = localStorage.getItem('lavanderia_device_id');
+                        if (!onlineLic || onlineLic.status !== 'active' || onlineLic.activated_device !== deviceId) {
+                            await db.license.update(1, { status: 'suspended' });
+                            return { valid: false, reason: 'suspended' };
+                        }
+                        await db.license.update(1, { last_validated: getNow() });
+                        return { valid: true };
+                    }
+                    // El servidor respondió no-OK (ej. límite de tasa): gracia offline.
+                    return { valid: lic.status === 'active', reason: lic.status === 'active' ? '' : 'suspended' };
+                } catch (e) {
+                    // Sin internet: GRACIA. No se bloquea a un cliente con licencia
+                    // local activa solo por no tener conexión (igual que en PC).
+                    return { valid: lic.status === 'active', reason: lic.status === 'active' ? '' : 'no-internet' };
+                }
             }
-            // Dentro de las 7 horas de gracia offline, respetar estado local
+
             return { valid: lic.status === 'active', reason: lic.status === 'active' ? '' : 'suspended' };
         }),
         validate: () => window.api.license.getStatus(),
