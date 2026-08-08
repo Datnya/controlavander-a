@@ -20,6 +20,13 @@
       "activated_device": "PC-AUTO",
       "status": "active",
       "isActive": true
+    },
+    {
+      "code": "CON-MOB-ZUDT-73VU",
+      "client_name": "Zooom",
+      "activated_device": "MOB-F0HCK7AWB",
+      "status": "active",
+      "isActive": true
     }
   ]
 }
