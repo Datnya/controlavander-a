@@ -413,8 +413,10 @@ window.api = {
                 if (lic.status !== 'active') throw new Error("Esta licencia ha sido suspendida");
                 
                 // Seguridad Estricta: La licencia debe tener este deviceId específico.
-                if (!lic.activated_device || lic.activated_device !== deviceId) {
-                    throw new Error("Esta licencia no está asignada a este dispositivo. Comunícate con el administrador.");
+                const dbDevice = (lic.activated_device || '').trim().toUpperCase();
+                const localDevice = (deviceId || '').trim().toUpperCase();
+                if (!dbDevice || dbDevice !== localDevice) {
+                    throw new Error("Licencia asignada a " + dbDevice + " pero tu dispositivo es " + localDevice + ".");
                 }
                 
                 // Guardar en local
