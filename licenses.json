@@ -27,6 +27,13 @@
       "activated_device": "MOB-F0HCK7AWB",
       "status": "active",
       "isActive": true
+    },
+    {
+      "code": "CON-MOB-18RY-7B9R",
+      "client_name": "V2",
+      "activated_device": "MOB-AWTNNOUXC",
+      "status": "active",
+      "isActive": true
     }
   ]
 }
