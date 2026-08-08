@@ -402,7 +402,9 @@ window.api = {
             }
             
             try {
-                const res = await fetch('https://raw.githubusercontent.com/Datnya/controlavander-a/main/licenses.json?t=' + Date.now());
+                const res = await fetch('https://api.github.com/repos/Datnya/controlavander-a/contents/licenses.json?t=' + Date.now(), {
+                    headers: { 'Accept': 'application/vnd.github.v3.raw' }
+                });
                 if (!res.ok) throw new Error("No se pudo conectar al servidor");
                 const json = await res.json();
                 
@@ -440,7 +442,9 @@ window.api = {
             if (now - lastVal > 7 * 60 * 60 * 1000) {
                 // Forzar revalidación online
                 try {
-                    const res = await fetch('https://raw.githubusercontent.com/Datnya/controlavander-a/main/licenses.json?t=' + now);
+                    const res = await fetch('https://api.github.com/repos/Datnya/controlavander-a/contents/licenses.json?t=' + now, {
+                        headers: { 'Accept': 'application/vnd.github.v3.raw' }
+                    });
                     if (res.ok) {
                         const json = await res.json();
                         const onlineLic = json.licenses.find(l => l.code === lic.code);

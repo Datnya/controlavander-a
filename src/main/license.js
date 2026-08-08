@@ -2,7 +2,7 @@ const https = require('https');
 const { getDeviceId } = require('./device');
 const db = require('./database');
 
-const LICENSES_URL = 'https://raw.githubusercontent.com/Datnya/controlavander-a/main/licenses.json';
+const BASE_LICENSES_URL = 'https://api.github.com/repos/Datnya/controlavander-a/contents/licenses.json';
 const VALIDATION_INTERVAL_HOURS = 7;
 
 /**
@@ -11,7 +11,15 @@ const VALIDATION_INTERVAL_HOURS = 7;
  */
 function fetchLicenses() {
   return new Promise((resolve, reject) => {
-    https.get(LICENSES_URL, { timeout: 15000 }, (res) => {
+    const url = `${BASE_LICENSES_URL}?t=${Date.now()}`;
+    const options = {
+      timeout: 15000,
+      headers: {
+        'Accept': 'application/vnd.github.v3.raw',
+        'User-Agent': 'LavanderiaApp'
+      }
+    };
+    https.get(url, options, (res) => {
       let data = '';
       res.on('data', chunk => { data += chunk; });
       res.on('end', () => {
